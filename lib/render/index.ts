@@ -2,7 +2,7 @@ import type { ParsedEvent } from '@/lib/events/schemas';
 import { section, richMessage, type SlackBlock } from './blocks';
 
 export interface Rendered { text: string; blocks: SlackBlock[] }
-export interface RenderContext { projectSlug?: string; time?: Date }
+export interface RenderContext { siteLabel?: string; projectSlug?: string; time?: Date }
 
 const EMOJI: Record<string, string> = {
   error: '🚨', seo_report: '🔎', signup: '👤', subscription: '💰',
@@ -17,7 +17,7 @@ function cap(s: string): string {
 export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
   const p = ev.payload as Record<string, any>;
   const emoji = EMOJI[ev.type] ?? 'ℹ️';
-  const base = { projectSlug: ctx?.projectSlug, time: ctx?.time };
+  const base = { siteLabel: ctx?.siteLabel, projectSlug: ctx?.projectSlug, time: ctx?.time };
 
   switch (ev.type) {
     case 'raw':

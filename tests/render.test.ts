@@ -16,7 +16,7 @@ describe('renderEvent', () => {
     expect(blocks).toEqual([{ type: 'divider' }]);
   });
   it('appends a context footer for non-raw types', () => {
-    const { blocks } = renderEvent({ type: 'signup', payload: { email: 'a@b.com' } } as any);
+    const { blocks } = renderEvent({ type: 'error', payload: { message: 'boom' } } as any);
     expect(blocks.at(-1)?.type).toBe('context');
   });
   it('omits the footer for raw passthrough', () => {
@@ -24,7 +24,11 @@ describe('renderEvent', () => {
     expect(blocks.some((b) => b.type === 'context')).toBe(false);
   });
   it('includes the project slug in the footer when ctx is passed', () => {
-    const { blocks } = renderEvent({ type: 'signup', payload: { email: 'a@b.com' } } as any, { projectSlug: 'decrevel-dev' });
+    const { blocks } = renderEvent({ type: 'error', payload: { message: 'boom' } } as any, { projectSlug: 'decrevel-dev' });
     expect(JSON.stringify(blocks)).toContain('decrevel-dev');
+  });
+  it('prefers the site domain label in the footer when provided', () => {
+    const { blocks } = renderEvent({ type: 'error', payload: { message: 'boom' } } as any, { siteLabel: 'decrevel.dev', projectSlug: 'decrevel-dev' });
+    expect(JSON.stringify(blocks)).toContain('decrevel.dev');
   });
 });
