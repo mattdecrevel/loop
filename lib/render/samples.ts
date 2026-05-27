@@ -56,6 +56,10 @@ export const SAMPLES: Record<EventType, unknown> = {
       email: 'sam@example.com',
       start: 'May 30, 2026 · 2:00 PM ET',
       notes: 'Wants to talk through a platform migration.',
+      startIso: '2026-05-30T18:00:00Z',
+      endIso: '2026-05-30T18:30:00Z',
+      location: 'Google Meet',
+      manageUrl: 'https://cal.com/booking/abc123',
     },
   },
   error: {

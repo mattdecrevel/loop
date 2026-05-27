@@ -43,7 +43,7 @@ const payloads = {
   }),
   cron: z.object({ name: z.string(), ok: z.boolean(), summary: z.string().optional(), table: tableSchema.optional(), bullets: z.array(z.string()).optional() }),
   infra: z.object({ host: z.string(), message: z.string(), metric: z.string().optional() }),
-  booking: z.object({ name: z.string(), email: z.string(), start: z.string(), notes: z.string().optional() }),
+  booking: z.object({ name: z.string(), email: z.string(), start: z.string(), notes: z.string().optional(), startIso: z.string().optional(), endIso: z.string().optional(), location: z.string().optional(), durationMin: z.number().optional(), manageUrl: z.string().optional() }),
   contact: z.object({ name: z.string(), email: z.string(), message: z.string(), source: z.string().optional() }),
   generic: z.object({ title: z.string(), body: z.string(), fields: z.array(z.object({ label: z.string(), value: z.string() })).optional(), context: z.string().optional(), subSections: z.array(subSectionSchema).optional(), table: tableSchema.optional(), emoji: z.string().optional(), footerNote: z.string().optional() }),
   raw: z.object({ text: z.string(), blocks: z.array(z.record(z.unknown())).optional() }),

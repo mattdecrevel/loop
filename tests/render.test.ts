@@ -40,18 +40,40 @@ describe('renderEvent', () => {
     expect(JSON.stringify(bug.blocks)).not.toEqual(generalJson);
     expect(JSON.stringify(bug.blocks)).toContain('🐛');
   });
-  it('renders a booking as a field grid', () => {
+  it('renders a booking as an action card with a mailto button (no calendar without startIso)', () => {
     const { blocks } = renderEvent({
       type: 'booking',
       payload: { name: 'Sam', email: 'sam@x.com', start: 'May 30', notes: 'migration' },
     } as any, { siteLabel: 'decrevel.dev' });
-    const fieldBlock = blocks.find((b) => b.type === 'section' && 'fields' in b);
-    expect(fieldBlock).toBeDefined();
+    const actionsBlock = blocks.find((b) => b.type === 'actions') as
+      | { type: string; elements: { url?: string }[] }
+      | undefined;
+    expect(actionsBlock).toBeDefined();
+    const urls = actionsBlock!.elements.map((e) => e.url);
+    expect(urls).toContain('mailto:sam@x.com');
+    expect(urls.some((u) => u?.includes('calendar.google.com'))).toBe(false);
     const json = JSON.stringify(blocks);
-    expect(json).toContain('Name');
-    expect(json).toContain('Sam');
-    expect(json).toContain('When');
     expect(json).toContain('📅');
+    expect(json).toContain('🗓️ May 30');
+  });
+  it('adds an Add-to-Calendar button and a preceding divider when startIso is supplied', () => {
+    const { blocks } = renderEvent({
+      type: 'booking',
+      payload: {
+        name: 'Sam', email: 'sam@x.com', start: 'May 30', notes: 'migration',
+        startIso: '2026-05-30T18:00:00Z', endIso: '2026-05-30T18:30:00Z',
+        location: 'Google Meet', manageUrl: 'https://cal.com/booking/abc123',
+      },
+    } as any, { siteLabel: 'decrevel.dev' });
+    const dividerIdx = blocks.findIndex((b) => b.type === 'divider');
+    const actionsIdx = blocks.findIndex((b) => b.type === 'actions');
+    expect(dividerIdx).toBe(actionsIdx - 1);
+    const actionsBlock = blocks[actionsIdx] as unknown as { elements: { url?: string }[] };
+    const urls = actionsBlock.elements.map((e) => e.url);
+    expect(urls).toContain('mailto:sam@x.com');
+    expect(urls.some((u) => u?.includes('calendar.google.com'))).toBe(true);
+    expect(urls).toContain('https://cal.com/booking/abc123');
+    expect(JSON.stringify(blocks)).toContain('📍 Google Meet');
   });
   it('renders a cron table as a fenced code block', () => {
     const { blocks } = renderEvent({

@@ -1,5 +1,6 @@
 import type { ParsedEvent } from '@/lib/events/schemas';
-import { section, richMessage, type SlackBlock } from './blocks';
+import { section, richMessage, type ActionButton, type SlackBlock } from './blocks';
+import { googleCalendarUrl } from './calendar';
 
 export interface Rendered { text: string; blocks: SlackBlock[] }
 export interface RenderContext { siteLabel?: string; projectSlug?: string; time?: Date }
@@ -119,16 +120,17 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
     }
 
     case 'booking': {
+      const bodyLines = [`*${p.name}*${p.notes ? ` · ${p.notes}` : ''}`, `🗓️ ${p.start}`, `📧 ${p.email}`];
+      if (p.location) bodyLines.push(`📍 ${p.location}`);
+      const actions: ActionButton[] = [{ emoji: '📧', text: 'Email', url: `mailto:${p.email}` }];
+      if (p.startIso) actions.push({ emoji: '📅', text: 'Add to Calendar', style: 'primary',
+        url: googleCalendarUrl({ title: p.notes || `Booking — ${p.name}`, startIso: p.startIso, endIso: p.endIso, location: p.location }) });
+      if (p.manageUrl) actions.push({ emoji: '🗓️', text: 'Reschedule', url: p.manageUrl });
       return {
-        text: `Booking — ${p.name}`,
+        text: `New booking — ${p.name}`,
         blocks: richMessage({
-          ...base, emoji, title: 'New booking',
-          fields: [
-            { label: 'Name', value: String(p.name) },
-            { label: 'Email', value: String(p.email) },
-            { label: 'When', value: String(p.start) },
-          ],
-          body: p.notes,
+          ...base, emoji, title: 'New Booking', body: bodyLines.join('\n'),
+          actions, divider: true,
         }),
       };
     }
