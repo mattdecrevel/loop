@@ -10,7 +10,6 @@ import { SendLiveButton } from './send-button';
 export const dynamic = 'force-dynamic';
 
 const PREVIEW_SLUG = 'decrevel-dev';
-const PHASE2_ACTIONS = ['Create Issue', '+Auto-Fix', 'Add To-Do'];
 
 function blockText(block: SlackBlock): string {
   // section: { text: { text } }; context: { elements: [{ text }] }
@@ -24,6 +23,7 @@ function blockText(block: SlackBlock): string {
 interface ActionElement {
   type: string;
   url?: string;
+  action_id?: string;
   style?: 'primary' | 'danger';
   text?: { text?: string };
 }
@@ -34,7 +34,7 @@ function ActionsBlock({ block }: { block: SlackBlock }) {
     <div className="mt-1 flex flex-wrap gap-2">
       {elements.map((el, i) => {
         const label = el.text?.text ?? '';
-        // URL buttons are real links (enabled). Server-handled buttons (no url) stay disabled.
+        // URL buttons are real links (enabled).
         if (el.url) {
           return (
             <a
@@ -52,16 +52,20 @@ function ActionsBlock({ block }: { block: SlackBlock }) {
             </a>
           );
         }
+        // Interactive (action_id) buttons are real once secrets are set — render as
+        // enabled-looking pills, visually distinct (dashed ring) from URL buttons.
         return (
           <button
             key={i}
             type="button"
-            disabled
-            title="Coming in Phase 2"
-            className="cursor-not-allowed rounded border border-dashed px-2.5 py-1 text-xs font-medium text-muted-foreground opacity-60"
+            title={`Server-handled action: ${el.action_id ?? ''}`}
+            className={
+              el.style === 'primary'
+                ? 'rounded border border-primary border-dashed bg-primary/90 px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary'
+                : 'rounded border border-dashed px-2.5 py-1 text-xs font-medium hover:bg-muted'
+            }
           >
             {label}
-            <span className="ml-1 text-[10px] uppercase">Phase 2</span>
           </button>
         );
       })}
@@ -87,7 +91,11 @@ function PreviewCard({ type }: { type: EventType }) {
     );
   }
 
-  const { blocks } = renderEvent(parsed.data, { projectSlug: PREVIEW_SLUG });
+  const { blocks } = renderEvent(parsed.data, {
+    projectSlug: PREVIEW_SLUG,
+    githubRepo: 'mattdecrevel/example',
+    autofixEnabled: true,
+  });
   const isRaw = type === 'raw';
 
   // Split body section(s) from the trailing context footer (house-style only).
@@ -132,22 +140,6 @@ function PreviewCard({ type }: { type: EventType }) {
                 })}
               </div>
 
-              {/* Phase 2 action pills (disabled placeholders) */}
-              <div className="mt-3 flex flex-wrap gap-2">
-                {PHASE2_ACTIONS.map((label) => (
-                  <button
-                    key={label}
-                    type="button"
-                    disabled
-                    title="Coming in Phase 2"
-                    className="cursor-not-allowed rounded border border-dashed px-2.5 py-1 text-xs font-medium text-muted-foreground opacity-60"
-                  >
-                    {label}
-                    <span className="ml-1 text-[10px] uppercase">Phase 2</span>
-                  </button>
-                ))}
-              </div>
-
               {footer ? (
                 <p className="mt-2 text-xs text-muted-foreground">{footer}</p>
               ) : null}
@@ -177,7 +169,7 @@ export default function PreviewsPage() {
         <p className="text-sm text-muted-foreground">
           Every message type rendered in the &ldquo;Rich hybrid&rdquo; house style. This is an HTML
           approximation for visual iteration — &ldquo;Send live&rdquo; posts the real sample through
-          the {PREVIEW_SLUG} pipeline. Action buttons are Phase&nbsp;2 placeholders.
+          the {PREVIEW_SLUG} pipeline. Dashed pills are server-handled (action_id) buttons.
         </p>
       </div>
 
