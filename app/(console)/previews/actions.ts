@@ -1,6 +1,6 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
+import { asc } from 'drizzle-orm';
 
 import { db } from '@/lib/db';
 import { projects } from '@/lib/db/schema';
@@ -9,11 +9,9 @@ import { ingestEvent } from '@/lib/ingest';
 import type { AuthedProject } from '@/lib/auth';
 import { SAMPLES } from '@/lib/render/samples';
 
-const PREVIEW_PROJECT_SLUG = 'decrevel-dev';
-
 export type SendPreviewResult = { ok: true; status: string } | { error: string };
 
-/** Post a sample event through the real ingest pipeline, as the decrevel-dev project. */
+/** Post a sample event through the real ingest pipeline, as the first project. */
 export async function sendPreview(type: EventType): Promise<SendPreviewResult> {
   const sample = SAMPLES[type];
   if (sample === undefined) return { error: `No sample for type "${type}".` };
@@ -30,11 +28,11 @@ export async function sendPreview(type: EventType): Promise<SendPreviewResult> {
       autofixEnabled: projects.autofixEnabled,
     })
     .from(projects)
-    .where(eq(projects.slug, PREVIEW_PROJECT_SLUG))
+    .orderBy(asc(projects.createdAt))
     .limit(1);
 
   if (!row) {
-    return { error: `Project "${PREVIEW_PROJECT_SLUG}" not found. Create it on the Projects page first.` };
+    return { error: 'No project found. Create one on the Projects page first.' };
   }
 
   try {
