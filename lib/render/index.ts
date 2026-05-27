@@ -1,9 +1,9 @@
 import type { ParsedEvent } from '@/lib/events/schemas';
-import { section, richMessage, type ActionButton, type SlackBlock } from './blocks';
+import { section, richMessage, type ActionButton, type InteractiveButton, type SlackBlock } from './blocks';
 import { googleCalendarUrl } from './calendar';
 
 export interface Rendered { text: string; blocks: SlackBlock[] }
-export interface RenderContext { siteLabel?: string; projectSlug?: string; time?: Date }
+export interface RenderContext { siteLabel?: string; projectSlug?: string; time?: Date; githubRepo?: string | null; autofixEnabled?: boolean }
 
 /** Contextual emoji per type AND subtype. */
 function pickEmoji(ev: ParsedEvent): string {
@@ -27,6 +27,20 @@ function cap(s: string): string {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
+/**
+ * Build the Create Issue / + Auto-Fix interactive buttons for issue-eligible types.
+ * Gated on the project having a github_repo. error/feedback are issue-eligible by default.
+ */
+function issueButtons(ev: ParsedEvent, ctx?: RenderContext): InteractiveButton[] {
+  if (!ctx?.githubRepo) return [];
+  return [
+    { emoji: '🐛', text: 'Create Issue', actionId: 'create_issue', value: ev.type },
+    ...(ctx.autofixEnabled || ev.actions.includes('autofix')
+      ? [{ text: 'Create Issue + Auto-Fix', actionId: 'create_issue_autofix', value: ev.type, style: 'primary' as const }]
+      : []),
+  ];
+}
+
 export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
   const p = ev.payload as Record<string, any>;
   const emoji = pickEmoji(ev);
@@ -43,11 +57,13 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
         const trimmed = String(p.stack).split('\n').slice(0, 6).join('\n');
         body += `\n\`\`\`${trimmed}\`\`\``;
       }
+      const errorIssueActions = issueButtons(ev, ctx);
       return {
         text: `Error — ${p.message}`,
         blocks: richMessage({
           ...base, emoji, title: 'Error', body,
           meta: [p.route ? `\`${p.route}\`` : null, p.source ? `source: ${p.source}` : null],
+          ...(errorIssueActions.length ? { interactiveActions: errorIssueActions, divider: true } : {}),
         }),
       };
     }
@@ -63,11 +79,16 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
         [p.browser, p.viewport].filter(Boolean).join(' / ') || null,
         [p.screen, p.locale, p.timezone].filter(Boolean).join(' · ') || null,
       ];
+      const feedbackIssueActions = issueButtons(ev, ctx);
+      const pageUrl = typeof page === 'string' && /^https?:\/\//.test(page) ? page : null;
+      const feedbackUrlActions: ActionButton[] = pageUrl ? [{ emoji: '🔗', text: 'View Page', url: pageUrl }] : [];
+      const hasActions = feedbackIssueActions.length || feedbackUrlActions.length;
       return {
         text: `Feedback — ${p.category}`,
         blocks: richMessage({
           ...base, emoji, title, subject, breadcrumb: p.breadcrumb,
           body: p.message, steps: p.steps, meta,
+          ...(hasActions ? { interactiveActions: feedbackIssueActions, actions: feedbackUrlActions, divider: true } : {}),
         }),
       };
     }

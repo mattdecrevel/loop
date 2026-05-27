@@ -122,6 +122,44 @@ describe('renderEvent', () => {
   });
 });
 
+describe('issue buttons (gated by repo)', () => {
+  function actions(blocks: any[]) {
+    return blocks.find((b) => b.type === 'actions') as { elements: { action_id?: string; url?: string; style?: string }[] } | undefined;
+  }
+  it('error with githubRepo set gets a create_issue action', () => {
+    const { blocks } = renderEvent({ type: 'error', actions: [], payload: { message: 'boom' } } as any, { githubRepo: 'me/repo' });
+    const a = actions(blocks);
+    expect(a).toBeDefined();
+    expect(a!.elements.some((e) => e.action_id === 'create_issue')).toBe(true);
+  });
+  it('error without githubRepo has no interactive actions', () => {
+    const { blocks } = renderEvent({ type: 'error', actions: [], payload: { message: 'boom' } } as any, {});
+    const a = actions(blocks);
+    expect(a).toBeUndefined();
+  });
+  it('autofixEnabled adds the create_issue_autofix action', () => {
+    const { blocks } = renderEvent({ type: 'error', actions: [], payload: { message: 'boom' } } as any, { githubRepo: 'me/repo', autofixEnabled: true });
+    const a = actions(blocks);
+    expect(a!.elements.some((e) => e.action_id === 'create_issue_autofix')).toBe(true);
+  });
+  it('event-level autofix action adds the auto-fix button even when project flag is off', () => {
+    const { blocks } = renderEvent({ type: 'error', actions: ['autofix'], payload: { message: 'boom' } } as any, { githubRepo: 'me/repo' });
+    const a = actions(blocks);
+    expect(a!.elements.some((e) => e.action_id === 'create_issue_autofix')).toBe(true);
+  });
+  it('feedback with githubRepo gets create_issue and a View Page URL button when page is a URL', () => {
+    const { blocks } = renderEvent({ type: 'feedback', actions: [], payload: { category: 'bug', message: 'x', page: 'https://decrevel.dev/blog' } } as any, { githubRepo: 'me/repo' });
+    const a = actions(blocks);
+    expect(a!.elements.some((e) => e.action_id === 'create_issue')).toBe(true);
+    expect(a!.elements.some((e) => e.url === 'https://decrevel.dev/blog')).toBe(true);
+  });
+  it('feedback without a URL page omits the View Page button', () => {
+    const { blocks } = renderEvent({ type: 'feedback', actions: [], payload: { category: 'bug', message: 'x', page: '/relative/path' } } as any, { githubRepo: 'me/repo' });
+    const a = actions(blocks);
+    expect(a!.elements.some((e) => e.url)).toBe(false);
+  });
+});
+
 describe('richMessage actions', () => {
   it('renders an actions block of URL buttons before the footer', () => {
     const blocks = richMessage({
