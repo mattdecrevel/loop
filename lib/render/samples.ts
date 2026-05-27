@@ -46,6 +46,7 @@ export const SAMPLES: Record<EventType, unknown> = {
         { header: 'Top movers', lines: ['• "loop notifications" +42 clicks', '• "drizzle neon" +18 clicks'] },
         { header: 'Health', lines: ['• 0 crawl errors', '• 3 new pages indexed'] },
       ],
+      footerNote: 'Anthropic budget: $2.43 of $25.00 this month',
     },
   },
   booking: {
@@ -111,6 +112,7 @@ export const SAMPLES: Record<EventType, unknown> = {
     type: 'generic',
     category: 'ops',
     payload: {
+      emoji: '🚀',
       title: 'Deploy succeeded',
       body: 'Production deploy of decrevel.dev completed.',
       fields: [
