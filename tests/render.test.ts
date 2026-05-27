@@ -2,10 +2,39 @@ import { describe, it, expect } from 'vitest';
 import { renderEvent } from '@/lib/render';
 
 describe('renderEvent', () => {
-  it('renders a signup as a single mobile-friendly section', () => {
-    const { text, blocks } = renderEvent({ type: 'signup', payload: { email: 'a@b.com', name: 'Ada' } } as any);
-    expect(text).toContain('a@b.com');
+  it('renders a signup as a minimal one-liner with no footer chrome', () => {
+    const { text, blocks } = renderEvent({ type: 'signup', payload: { email: 'a@b.com', name: 'Ada' } } as any, { siteLabel: 'decrevel.dev' });
+    expect(text).toBe('decrevel.dev | Ada (a@b.com)');
+    expect(blocks).toHaveLength(1);
     expect(blocks[0].type).toBe('section');
+    expect(JSON.stringify(blocks)).toContain('Ada (a@b.com)');
+    expect(blocks.some((b) => b.type === 'context')).toBe(false);
+  });
+  it('renders feedback with a breadcrumb and numbered steps', () => {
+    const { blocks } = renderEvent({
+      type: 'feedback',
+      payload: {
+        category: 'bug', message: 'toggle resets', breadcrumb: 'A > B > C',
+        steps: ['First do this', 'Then do that'],
+      },
+    } as any);
+    const json = JSON.stringify(blocks);
+    expect(json).toContain('A > B > C');
+    expect(json).toContain('1. First do this');
+    expect(json).toContain('2. Then do that');
+  });
+  it('renders a cron table as a fenced code block', () => {
+    const { blocks } = renderEvent({
+      type: 'cron',
+      payload: {
+        name: 'picks', ok: true, summary: 'done',
+        table: { columns: ['Ticker', 'EV'], rows: [['NVDA', '+18%']] },
+      },
+    } as any);
+    const json = JSON.stringify(blocks);
+    expect(json).toContain('```');
+    expect(json).toContain('Ticker');
+    expect(json).toContain('NVDA');
   });
   it('renders generic with provided title/body', () => {
     const { blocks } = renderEvent({ type: 'generic', category: 'ops', payload: { title: 'Deploy', body: 'shipped' } } as any);

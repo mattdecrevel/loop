@@ -40,21 +40,30 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
     }
 
     case 'feedback': {
-      const title = `${cap(String(p.category))} Report`;
+      const category = String(p.category);
+      const title = category === 'general' ? 'General Feedback' : `${cap(category)} Report`;
+      const subject = p.name && p.section ? `${p.name} on ${p.section}` : p.name;
+      const page = p.page ?? p.pageUrl;
+      const meta = [
+        p.userEmail ? `${p.userEmail}${p.plan ? ` · ${p.plan}` : ''}` : null,
+        page ? `\`${page}\`` : null,
+        [p.browser, p.viewport].filter(Boolean).join(' / ') || null,
+        [p.screen, p.locale, p.timezone].filter(Boolean).join(' · ') || null,
+      ];
       return {
         text: `Feedback — ${p.category}`,
         blocks: richMessage({
-          ...base, emoji, title, body: p.message,
-          meta: [p.userEmail, p.page ? `\`${p.page}\`` : null],
+          ...base, emoji, title, subject, breadcrumb: p.breadcrumb,
+          body: p.message, steps: p.steps, meta,
         }),
       };
     }
 
     case 'signup': {
-      const id = p.name ? `${p.name} (${p.email})` : p.email;
+      const identity = p.name ? `${p.name} (${p.email})` : p.email;
       return {
-        text: `New signup — ${id}`,
-        blocks: richMessage({ ...base, emoji, title: 'New signup', body: id }),
+        text: `${ctx?.siteLabel ?? 'signup'} | ${identity}`,
+        blocks: [section(`*${ctx?.siteLabel ?? 'New signup'}* | ${identity}`)],
       };
     }
 
@@ -71,11 +80,17 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
 
     case 'cron': {
       const ok = Boolean(p.ok);
+      const bodyLines: string[] = [];
+      if (p.summary) bodyLines.push(String(p.summary));
+      if (Array.isArray(p.bullets) && p.bullets.length) {
+        bodyLines.push(...p.bullets.map((b: string) => `• ${b}`));
+      }
       return {
         text: `Cron ${p.name} ${ok ? 'ok' : 'failed'}`,
         blocks: richMessage({
-          ...base, emoji: ok ? '✅' : '⚠️', title: 'Cron', subject: String(p.name), body: p.summary,
-          meta: [ok ? '✅ ok' : '⚠️ failed'],
+          ...base, emoji: ok ? '✅' : '⚠️', title: 'Cron', subject: String(p.name),
+          body: bodyLines.length ? bodyLines.join('\n') : undefined,
+          table: p.table, meta: [ok ? '✅ ok' : '⚠️ failed'],
         }),
       };
     }
@@ -119,6 +134,7 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
         text: `${p.siteLabel} — ${p.clicks}c/${p.impressions}i`,
         blocks: richMessage({
           ...base, emoji, title: String(p.siteLabel), subject: 'search digest', body,
+          subSections: Array.isArray(p.subSections) ? p.subSections : undefined,
         }),
       };
     }
@@ -130,7 +146,11 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
       if (p.context) meta.push(p.context);
       return {
         text: p.title,
-        blocks: richMessage({ ...base, emoji, title: String(p.title), body: p.body, meta }),
+        blocks: richMessage({
+          ...base, emoji, title: String(p.title), body: p.body, meta,
+          subSections: Array.isArray(p.subSections) ? p.subSections : undefined,
+          table: p.table,
+        }),
       };
     }
 

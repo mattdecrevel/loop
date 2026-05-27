@@ -12,18 +12,40 @@ export const TYPE_DEFAULT_CATEGORY: Record<string, Category | null> = {
 
 const actionEnum = z.enum(['issue', 'autofix', 'todo', 'remind']);
 
+const tableSchema = z.object({
+  columns: z.array(z.string()),
+  rows: z.array(z.array(z.union([z.string(), z.number()]))),
+});
+const subSectionSchema = z.object({ header: z.string(), lines: z.array(z.string()) });
+
 // Per-type payloads. Kept permissive where the renderer tolerates missing fields.
 const payloads = {
   error: z.object({ message: z.string(), route: z.string().optional(), stack: z.string().optional(), source: z.string().optional() }),
-  seo_report: z.object({ siteLabel: z.string(), clicks: z.number(), impressions: z.number(), topQueries: z.array(z.string()).optional() }),
+  seo_report: z.object({ siteLabel: z.string(), clicks: z.number(), impressions: z.number(), topQueries: z.array(z.string()).optional(), subSections: z.array(subSectionSchema).optional() }),
   signup: z.object({ email: z.string(), name: z.string().optional() }),
   subscription: z.object({ email: z.string(), kind: z.enum(['new', 'upgrade', 'cancel', 'payment_failed', 'refund', 'addon']), plan: z.string().optional(), amount: z.number().optional(), interval: z.string().optional() }),
-  feedback: z.object({ category: z.enum(['bug', 'question', 'feature', 'general']), message: z.string(), userEmail: z.string().optional(), page: z.string().optional() }),
-  cron: z.object({ name: z.string(), ok: z.boolean(), summary: z.string().optional() }),
+  feedback: z.object({
+    category: z.enum(['bug', 'question', 'feature', 'general']),
+    message: z.string(),
+    userEmail: z.string().optional(),
+    page: z.string().optional(),
+    name: z.string().optional(),
+    section: z.string().optional(),
+    breadcrumb: z.string().optional(),
+    steps: z.array(z.string()).optional(),
+    plan: z.string().optional(),
+    browser: z.string().optional(),
+    viewport: z.string().optional(),
+    screen: z.string().optional(),
+    locale: z.string().optional(),
+    timezone: z.string().optional(),
+    pageUrl: z.string().optional(),
+  }),
+  cron: z.object({ name: z.string(), ok: z.boolean(), summary: z.string().optional(), table: tableSchema.optional(), bullets: z.array(z.string()).optional() }),
   infra: z.object({ host: z.string(), message: z.string(), metric: z.string().optional() }),
   booking: z.object({ name: z.string(), email: z.string(), start: z.string(), notes: z.string().optional() }),
   contact: z.object({ name: z.string(), email: z.string(), message: z.string(), source: z.string().optional() }),
-  generic: z.object({ title: z.string(), body: z.string(), fields: z.array(z.object({ label: z.string(), value: z.string() })).optional(), context: z.string().optional() }),
+  generic: z.object({ title: z.string(), body: z.string(), fields: z.array(z.object({ label: z.string(), value: z.string() })).optional(), context: z.string().optional(), subSections: z.array(subSectionSchema).optional(), table: tableSchema.optional() }),
   raw: z.object({ text: z.string(), blocks: z.array(z.record(z.unknown())).optional() }),
 } as const;
 

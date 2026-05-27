@@ -21,7 +21,19 @@ export const SAMPLES: Record<EventType, unknown> = {
   },
   cron: {
     type: 'cron',
-    payload: { name: 'nightly-sync', ok: true, summary: 'Synced 1,284 records in 42s.' },
+    payload: {
+      name: 'picks-nightly',
+      ok: true,
+      summary: 'Scored 38 options, surfaced the top 5 by expected value.',
+      table: {
+        columns: ['Ticker', 'Strike', 'EV', 'Conf'],
+        rows: [
+          ['NVDA', '$120c', '+18.4%', '0.82'],
+          ['AAPL', '$210c', '+9.1%', '0.74'],
+          ['TSLA', '$260p', '+7.6%', '0.69'],
+        ],
+      },
+    },
   },
   seo_report: {
     type: 'seo_report',
@@ -30,6 +42,10 @@ export const SAMPLES: Record<EventType, unknown> = {
       clicks: 312,
       impressions: 8420,
       topQueries: ['matt decrevel', 'agentic workflows', 'next.js notification service'],
+      subSections: [
+        { header: 'Top movers', lines: ['• "loop notifications" +42 clicks', '• "drizzle neon" +18 clicks'] },
+        { header: 'Health', lines: ['• 0 crawl errors', '• 3 new pages indexed'] },
+      ],
     },
   },
   booking: {
@@ -61,7 +77,21 @@ export const SAMPLES: Record<EventType, unknown> = {
       category: 'bug',
       message: 'The dark-mode toggle resets on every page navigation.',
       userEmail: 'user@example.com',
+      name: 'Elio Vance',
+      section: 'Settings',
+      breadcrumb: 'Account > Preferences > Appearance',
+      steps: [
+        'Enable dark mode on the Settings page.',
+        'Navigate to any other page.',
+        'Observe the theme reverts to light.',
+      ],
+      plan: 'Pro',
       page: '/settings',
+      browser: 'Chrome 124',
+      viewport: '1440x900',
+      screen: '2560x1440',
+      locale: 'en-US',
+      timezone: 'America/New_York',
     },
   },
   infra: {
