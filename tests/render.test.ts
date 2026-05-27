@@ -138,6 +138,35 @@ describe('richMessage actions', () => {
     // actions come before the trailing source footer
     expect(blocks.at(-1)?.type).toBe('context');
   });
+  it('renders interactive (action_id) buttons with no url and before URL buttons', () => {
+    const blocks = richMessage({
+      emoji: '🚨', title: 'Error', body: 'boom',
+      interactiveActions: [{ text: 'Create Issue', actionId: 'create_issue' }],
+      actions: [{ text: 'Open', url: 'https://example.com' }],
+    });
+    const actionsBlock = blocks.find((b) => b.type === 'actions') as
+      | { type: string; elements: { type: string; action_id?: string; url?: string; text: { text: string } }[] }
+      | undefined;
+    expect(actionsBlock).toBeDefined();
+    // interactive button rendered first
+    expect(actionsBlock!.elements[0].action_id).toBe('create_issue');
+    expect(actionsBlock!.elements[0].url).toBeUndefined();
+    // URL button rendered after
+    expect(actionsBlock!.elements[1].url).toBe('https://example.com');
+    expect(actionsBlock!.elements[1].action_id).toBeUndefined();
+  });
+  it('renders interactive buttons with optional value and style', () => {
+    const blocks = richMessage({
+      emoji: '🚨', title: 'Error',
+      interactiveActions: [{ text: 'Auto-Fix', actionId: 'create_issue_autofix', value: 'error', style: 'primary' }],
+    });
+    const actionsBlock = blocks.find((b) => b.type === 'actions') as
+      | { elements: { action_id?: string; value?: string; style?: string }[] }
+      | undefined;
+    expect(actionsBlock!.elements[0].action_id).toBe('create_issue_autofix');
+    expect(actionsBlock!.elements[0].value).toBe('error');
+    expect(actionsBlock!.elements[0].style).toBe('primary');
+  });
   it('inserts a divider before the actions block when divider:true', () => {
     const blocks = richMessage({
       emoji: '📅', title: 'Card', body: 'hi', divider: true,

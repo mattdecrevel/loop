@@ -18,6 +18,7 @@ export function codeTable(columns: string[], rows: (string | number)[][]): strin
 export interface RichSubSection { header: string; lines: string[] }
 export interface RichField { label: string; value: string }
 export interface ActionButton { text: string; url: string; emoji?: string; style?: 'primary' | 'danger' }
+export interface InteractiveButton { text: string; actionId: string; value?: string; emoji?: string; style?: 'primary' | 'danger' }
 
 export interface RichMessageInput {
   emoji: string;
@@ -31,6 +32,7 @@ export interface RichMessageInput {
   table?: { columns: string[]; rows: (string | number)[][] };  // monospace code block
   meta?: (string | null | undefined)[];  // → muted context block
   actions?: ActionButton[];        // URL action buttons (rendered before the footer)
+  interactiveActions?: InteractiveButton[];  // server-handled (action_id) buttons — rendered before URL buttons
   divider?: boolean;               // divider before the actions block
   footerNote?: string;             // optional helpful note in the footer (e.g. "Anthropic budget: $2.43 of $25.00 this month")
   siteLabel?: string;              // source footer (preferred)
@@ -65,17 +67,23 @@ export function richMessage(input: RichMessageInput): SlackBlock[] {
   const meta = (input.meta ?? []).filter((m): m is string => Boolean(m && m.trim()));
   if (meta.length) blocks.push(context(meta.join('  ·  ')));
 
-  if (input.actions?.length) {
+  const urlButtons = (input.actions ?? []).map((a) => ({
+    type: 'button',
+    text: { type: 'plain_text', text: a.emoji ? `${a.emoji} ${a.text}` : a.text, emoji: true },
+    url: a.url,
+    ...(a.style ? { style: a.style } : {}),
+  }));
+  const intButtons = (input.interactiveActions ?? []).map((b) => ({
+    type: 'button',
+    text: { type: 'plain_text', text: b.emoji ? `${b.emoji} ${b.text}` : b.text, emoji: true },
+    action_id: b.actionId,
+    ...(b.value ? { value: b.value } : {}),
+    ...(b.style ? { style: b.style } : {}),
+  }));
+  const elements = [...intButtons, ...urlButtons];
+  if (elements.length) {
     if (input.divider) blocks.push({ type: 'divider' });
-    blocks.push({
-      type: 'actions',
-      elements: input.actions.map((a) => ({
-        type: 'button',
-        text: { type: 'plain_text', text: a.emoji ? `${a.emoji} ${a.text}` : a.text, emoji: true },
-        url: a.url,
-        ...(a.style ? { style: a.style } : {}),
-      })),
-    });
+    blocks.push({ type: 'actions', elements });
   }
 
   const source = input.siteLabel ?? input.projectSlug;
