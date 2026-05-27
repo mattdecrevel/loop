@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Boxes, Hash, Route, Activity } from 'lucide-react';
+import { LayoutDashboard, Boxes, Hash, Route, Activity, Eye } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: '/channels', label: 'Channels', icon: Hash },
   { href: '/routes', label: 'Routes', icon: Route },
   { href: '/events', label: 'Events', icon: Activity },
+  { href: '/previews', label: 'Previews', icon: Eye },
 ];
 
 export function SidebarNav() {
