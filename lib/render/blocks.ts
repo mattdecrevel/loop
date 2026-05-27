@@ -17,6 +17,7 @@ export function codeTable(columns: string[], rows: (string | number)[][]): strin
 
 export interface RichSubSection { header: string; lines: string[] }
 export interface RichField { label: string; value: string }
+export interface ActionButton { text: string; url: string; emoji?: string; style?: 'primary' | 'danger' }
 
 export interface RichMessageInput {
   emoji: string;
@@ -29,6 +30,8 @@ export interface RichMessageInput {
   fields?: RichField[];             // 2-col key/value grid (section.fields)
   table?: { columns: string[]; rows: (string | number)[][] };  // monospace code block
   meta?: (string | null | undefined)[];  // → muted context block
+  actions?: ActionButton[];        // URL action buttons (rendered before the footer)
+  divider?: boolean;               // divider before the actions block
   footerNote?: string;             // optional helpful note in the footer (e.g. "Anthropic budget: $2.43 of $25.00 this month")
   siteLabel?: string;              // source footer (preferred)
   projectSlug?: string;            // source footer fallback
@@ -61,6 +64,19 @@ export function richMessage(input: RichMessageInput): SlackBlock[] {
 
   const meta = (input.meta ?? []).filter((m): m is string => Boolean(m && m.trim()));
   if (meta.length) blocks.push(context(meta.join('  ·  ')));
+
+  if (input.actions?.length) {
+    if (input.divider) blocks.push({ type: 'divider' });
+    blocks.push({
+      type: 'actions',
+      elements: input.actions.map((a) => ({
+        type: 'button',
+        text: { type: 'plain_text', text: a.emoji ? `${a.emoji} ${a.text}` : a.text, emoji: true },
+        url: a.url,
+        ...(a.style ? { style: a.style } : {}),
+      })),
+    });
+  }
 
   const source = input.siteLabel ?? input.projectSlug;
   const footer = [input.footerNote, source].filter((s): s is string => Boolean(s && s.trim())).join('  ·  ');

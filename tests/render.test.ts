@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderEvent } from '@/lib/render';
+import { richMessage } from '@/lib/render/blocks';
 
 describe('renderEvent', () => {
   it('renders a signup with the standardized skeleton and a source footer', () => {
@@ -96,5 +97,33 @@ describe('renderEvent', () => {
   it('prefers the site domain label in the footer when provided', () => {
     const { blocks } = renderEvent({ type: 'error', payload: { message: 'boom' } } as any, { siteLabel: 'decrevel.dev', projectSlug: 'decrevel-dev' });
     expect(JSON.stringify(blocks)).toContain('decrevel.dev');
+  });
+});
+
+describe('richMessage actions', () => {
+  it('renders an actions block of URL buttons before the footer', () => {
+    const blocks = richMessage({
+      emoji: '📅', title: 'Card', body: 'hi',
+      actions: [{ emoji: '📧', text: 'Email', url: 'mailto:a@b.com' }],
+      siteLabel: 'decrevel.dev',
+    });
+    const actionsBlock = blocks.find((b) => b.type === 'actions') as
+      | { type: string; elements: { type: string; url?: string }[] }
+      | undefined;
+    expect(actionsBlock).toBeDefined();
+    expect(actionsBlock!.elements[0].type).toBe('button');
+    expect(actionsBlock!.elements[0].url).toBe('mailto:a@b.com');
+    // actions come before the trailing source footer
+    expect(blocks.at(-1)?.type).toBe('context');
+  });
+  it('inserts a divider before the actions block when divider:true', () => {
+    const blocks = richMessage({
+      emoji: '📅', title: 'Card', body: 'hi', divider: true,
+      actions: [{ text: 'Open', url: 'https://example.com' }],
+    });
+    const dividerIdx = blocks.findIndex((b) => b.type === 'divider');
+    const actionsIdx = blocks.findIndex((b) => b.type === 'actions');
+    expect(dividerIdx).toBeGreaterThanOrEqual(0);
+    expect(dividerIdx).toBe(actionsIdx - 1);
   });
 });
