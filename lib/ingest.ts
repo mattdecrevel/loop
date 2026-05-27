@@ -1,0 +1,48 @@
+import { db } from './db';
+import { events } from './db/schema';
+import { parseEvent, type ParsedEvent } from './events/schemas';
+import { renderEvent } from './render';
+import { resolveDestination } from './routing';
+import { postToChannel, postToWebhook } from './slack/transport';
+import type { AuthedProject } from './auth';
+
+export function validateIngest(input: unknown): { ok: true; event: ParsedEvent } | { ok: false; error: string } {
+  const r = parseEvent(input);
+  return r.success ? { ok: true, event: r.data } : { ok: false, error: r.error };
+}
+
+/** Full pipeline: render -> resolve route -> post -> record. Returns event id. */
+export async function ingestEvent(project: AuthedProject, ev: ParsedEvent): Promise<{ status: string }> {
+  const rendered = renderEvent(ev);
+
+  // Digest: persist + skip immediate post for routine info events.
+  if (ev.digest && ev.severity === 'info') {
+    await db.insert(events).values({
+      projectId: project.id, type: ev.type, category: ev.category, severity: ev.severity,
+      payload: ev.payload as object, status: 'digested', idempotencyKey: ev.idempotencyKey, digest: true,
+    });
+    return { status: 'digested' };
+  }
+
+  const dest = await resolveDestination(project.id, ev.category);
+  if (!dest) {
+    await db.insert(events).values({
+      projectId: project.id, type: ev.type, category: ev.category, severity: ev.severity,
+      payload: ev.payload as object, status: 'skipped', idempotencyKey: ev.idempotencyKey,
+    });
+    return { status: 'skipped_no_route' };
+  }
+
+  const result = dest.kind === 'channel'
+    ? await postToChannel(rendered.text, rendered.blocks, dest.slackChannelId)
+    : await postToWebhook(rendered.text, rendered.blocks, dest.url);
+
+  await db.insert(events).values({
+    projectId: project.id, type: ev.type, category: ev.category, severity: ev.severity,
+    payload: ev.payload as object, status: result.ok ? 'posted' : 'failed',
+    slackTs: result.ts ?? null, slackChannelId: result.channel ?? (dest.kind === 'channel' ? dest.slackChannelId : null),
+    idempotencyKey: ev.idempotencyKey,
+  });
+
+  return { status: result.ok ? 'posted' : 'failed' };
+}
