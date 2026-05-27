@@ -1,0 +1,29 @@
+name: Publish client
+
+# Publishes @mattdecrevel/loop (packages/client) to GitHub Packages.
+# Run manually (workflow_dispatch) or by pushing a tag like `client-v0.1.0`.
+# Uses the Action's built-in GITHUB_TOKEN (packages: write) — no PAT needed.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'client-v*'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Publish to GitHub Packages
+        working-directory: packages/client
+        run: npm publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
