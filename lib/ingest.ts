@@ -13,7 +13,7 @@ export function validateIngest(input: unknown): { ok: true; event: ParsedEvent }
 
 /** Full pipeline: render -> resolve route -> post -> record. Returns event id. */
 export async function ingestEvent(project: AuthedProject, ev: ParsedEvent): Promise<{ status: string }> {
-  const rendered = renderEvent(ev, { projectSlug: project.slug, time: new Date() });
+  const rendered = renderEvent(ev, { siteLabel: project.name, projectSlug: project.slug, time: new Date() });
 
   // Digest: persist + skip immediate post for routine info events.
   if (ev.digest && ev.severity === 'info') {

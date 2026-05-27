@@ -25,6 +25,7 @@ export async function sendPreview(type: EventType): Promise<SendPreviewResult> {
     .select({
       id: projects.id,
       slug: projects.slug,
+      name: projects.name,
       githubRepo: projects.githubRepo,
       autofixEnabled: projects.autofixEnabled,
     })

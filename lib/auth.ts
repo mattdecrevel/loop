@@ -14,6 +14,7 @@ export function hashApiKey(key: string): string {
 export interface AuthedProject {
   id: string;
   slug: string;
+  name: string;
   githubRepo: string | null;
   autofixEnabled: boolean;
 }
@@ -24,7 +25,7 @@ export async function authenticateProject(authHeader: string | null): Promise<Au
   const raw = authHeader.slice('Bearer '.length).trim();
   if (!raw) return null;
   const [row] = await db
-    .select({ id: projects.id, slug: projects.slug, githubRepo: projects.githubRepo, autofixEnabled: projects.autofixEnabled })
+    .select({ id: projects.id, slug: projects.slug, name: projects.name, githubRepo: projects.githubRepo, autofixEnabled: projects.autofixEnabled })
     .from(projects)
     .where(eq(projects.apiKeyHash, hashApiKey(raw)))
     .limit(1);
