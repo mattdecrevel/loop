@@ -15,4 +15,16 @@ describe('renderEvent', () => {
     const { blocks } = renderEvent({ type: 'raw', payload: { text: 't', blocks: [{ type: 'divider' }] } } as any);
     expect(blocks).toEqual([{ type: 'divider' }]);
   });
+  it('appends a context footer for non-raw types', () => {
+    const { blocks } = renderEvent({ type: 'signup', payload: { email: 'a@b.com' } } as any);
+    expect(blocks.at(-1)?.type).toBe('context');
+  });
+  it('omits the footer for raw passthrough', () => {
+    const { blocks } = renderEvent({ type: 'raw', payload: { text: 't', blocks: [{ type: 'divider' }] } } as any);
+    expect(blocks.some((b) => b.type === 'context')).toBe(false);
+  });
+  it('includes the project slug in the footer when ctx is passed', () => {
+    const { blocks } = renderEvent({ type: 'signup', payload: { email: 'a@b.com' } } as any, { projectSlug: 'decrevel-dev' });
+    expect(JSON.stringify(blocks)).toContain('decrevel-dev');
+  });
 });
