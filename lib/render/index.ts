@@ -4,11 +4,23 @@ import { section, richMessage, type SlackBlock } from './blocks';
 export interface Rendered { text: string; blocks: SlackBlock[] }
 export interface RenderContext { siteLabel?: string; projectSlug?: string; time?: Date }
 
-const EMOJI: Record<string, string> = {
-  error: '🚨', seo_report: '🔎', signup: '👤', subscription: '💰',
-  feedback: '💬', cron: '⚙️', infra: '📡', booking: '📅', contact: '✉️',
-  generic: 'ℹ️', raw: 'ℹ️',
-};
+/** Contextual emoji per type AND subtype. */
+function pickEmoji(ev: ParsedEvent): string {
+  const p = ev.payload as Record<string, any>;
+  switch (ev.type) {
+    case 'error': return '🚨';
+    case 'feedback': return ({ bug: '🐛', question: '❓', feature: '💡', general: '💬' } as Record<string, string>)[p.category] ?? '💬';
+    case 'subscription': return ({ new: '🎉', upgrade: '⬆️', cancel: '👋', payment_failed: '⚠️', refund: '💸', addon: '➕' } as Record<string, string>)[p.kind] ?? '💳';
+    case 'signup': return '👤';
+    case 'cron': return p.ok ? '✅' : '⚠️';
+    case 'infra': return ev.severity === 'error' ? '🔴' : '📡';
+    case 'booking': return '📅';
+    case 'contact': return '✉️';
+    case 'seo_report': return '🔎';
+    case 'generic': return (p.emoji as string) ?? 'ℹ️';
+    default: return 'ℹ️';
+  }
+}
 
 function cap(s: string): string {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -16,8 +28,8 @@ function cap(s: string): string {
 
 export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
   const p = ev.payload as Record<string, any>;
-  const emoji = EMOJI[ev.type] ?? 'ℹ️';
-  const base = { siteLabel: ctx?.siteLabel, projectSlug: ctx?.projectSlug, time: ctx?.time };
+  const emoji = pickEmoji(ev);
+  const base = { siteLabel: ctx?.siteLabel, projectSlug: ctx?.projectSlug };
 
   switch (ev.type) {
     case 'raw':
@@ -41,8 +53,8 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
 
     case 'feedback': {
       const category = String(p.category);
-      const title = category === 'general' ? 'General Feedback' : `${cap(category)} Report`;
-      const subject = p.name && p.section ? `${p.name} on ${p.section}` : p.name;
+      const title = ({ bug: 'Bug Report', question: 'Question', feature: 'Feature Request', general: 'General Feedback' } as Record<string, string>)[category] ?? cap(category);
+      const subject = p.name && p.section ? `${p.name} on ${p.section}` : (p.name ?? p.section);
       const page = p.page ?? p.pageUrl;
       const meta = [
         p.userEmail ? `${p.userEmail}${p.plan ? ` · ${p.plan}` : ''}` : null,
@@ -62,8 +74,10 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
     case 'signup': {
       const identity = p.name ? `${p.name} (${p.email})` : p.email;
       return {
-        text: `${ctx?.siteLabel ?? 'signup'} | ${identity}`,
-        blocks: [section(`*${ctx?.siteLabel ?? 'New signup'}* | ${identity}`)],
+        text: `New signup — ${identity}`,
+        blocks: richMessage({
+          ...base, emoji, title: 'New signup', subject: identity,
+        }),
       };
     }
 
@@ -88,9 +102,9 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
       return {
         text: `Cron ${p.name} ${ok ? 'ok' : 'failed'}`,
         blocks: richMessage({
-          ...base, emoji: ok ? '✅' : '⚠️', title: 'Cron', subject: String(p.name),
+          ...base, emoji, title: String(p.name),
           body: bodyLines.length ? bodyLines.join('\n') : undefined,
-          table: p.table, meta: [ok ? '✅ ok' : '⚠️ failed'],
+          table: p.table, meta: [ok ? 'ok' : 'failed'],
         }),
       };
     }
@@ -108,8 +122,13 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
       return {
         text: `Booking — ${p.name}`,
         blocks: richMessage({
-          ...base, emoji, title: 'New booking', body: `${p.name} (${p.email})`,
-          meta: [p.start, p.notes],
+          ...base, emoji, title: 'New booking',
+          fields: [
+            { label: 'Name', value: String(p.name) },
+            { label: 'Email', value: String(p.email) },
+            { label: 'When', value: String(p.start) },
+          ],
+          body: p.notes,
         }),
       };
     }
@@ -119,7 +138,7 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
       return {
         text: `Contact — ${p.name}`,
         blocks: richMessage({
-          ...base, emoji, title: `Contact${p.source ? ` (${p.source})` : ''}`, body,
+          ...base, emoji, title: 'Contact', subject: p.source, body,
         }),
       };
     }
@@ -135,21 +154,21 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
         blocks: richMessage({
           ...base, emoji, title: String(p.siteLabel), subject: 'search digest', body,
           subSections: Array.isArray(p.subSections) ? p.subSections : undefined,
+          footerNote: p.footerNote,
         }),
       };
     }
 
     case 'generic': {
-      const meta: (string | null | undefined)[] = Array.isArray(p.fields)
-        ? p.fields.map((f: { label: string; value: string }) => `*${f.label}:* ${f.value}`)
-        : [];
-      if (p.context) meta.push(p.context);
       return {
         text: p.title,
         blocks: richMessage({
-          ...base, emoji, title: String(p.title), body: p.body, meta,
+          ...base, emoji, title: String(p.title), body: p.body,
+          fields: Array.isArray(p.fields) ? p.fields : undefined,
           subSections: Array.isArray(p.subSections) ? p.subSections : undefined,
           table: p.table,
+          meta: [p.context],
+          footerNote: p.footerNote,
         }),
       };
     }

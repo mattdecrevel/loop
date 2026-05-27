@@ -2,15 +2,19 @@ import { describe, it, expect } from 'vitest';
 import { renderEvent } from '@/lib/render';
 
 describe('renderEvent', () => {
-  it('renders a signup as a minimal one-liner with no footer chrome', () => {
-    const { text, blocks } = renderEvent({ type: 'signup', payload: { email: 'a@b.com', name: 'Ada' } } as any, { siteLabel: 'decrevel.dev' });
-    expect(text).toBe('decrevel.dev | Ada (a@b.com)');
-    expect(blocks).toHaveLength(1);
+  it('renders a signup with the standardized skeleton and a source footer', () => {
+    const { blocks } = renderEvent({ type: 'signup', payload: { email: 'a@b.com', name: 'Ada' } } as any, { siteLabel: 'decrevel.dev' });
     expect(blocks[0].type).toBe('section');
-    expect(JSON.stringify(blocks)).toContain('Ada (a@b.com)');
-    expect(blocks.some((b) => b.type === 'context')).toBe(false);
+    const json = JSON.stringify(blocks);
+    expect(json).toContain('👤');
+    expect(json).toContain('New signup');
+    expect(json).toContain('Ada (a@b.com)');
+    // Now gets the source footer like every other type.
+    expect(blocks.some((b) => b.type === 'context')).toBe(true);
+    expect(blocks.at(-1)?.type).toBe('context');
+    expect(JSON.stringify(blocks.at(-1))).toContain('decrevel.dev');
   });
-  it('renders feedback with a breadcrumb and numbered steps', () => {
+  it('renders a feedback bug with the 🐛 emoji and a Bug Report title', () => {
     const { blocks } = renderEvent({
       type: 'feedback',
       payload: {
@@ -19,9 +23,34 @@ describe('renderEvent', () => {
       },
     } as any);
     const json = JSON.stringify(blocks);
+    expect(json).toContain('🐛');
+    expect(json).toContain('Bug Report');
     expect(json).toContain('A > B > C');
     expect(json).toContain('1. First do this');
     expect(json).toContain('2. Then do that');
+  });
+  it('renders general feedback with the 💬 emoji and differs from a bug', () => {
+    const bug = renderEvent({ type: 'feedback', payload: { category: 'bug', message: 'x' } } as any);
+    const general = renderEvent({ type: 'feedback', payload: { category: 'general', message: 'x' } } as any);
+    const generalJson = JSON.stringify(general.blocks);
+    expect(generalJson).toContain('💬');
+    expect(generalJson).toContain('General Feedback');
+    // contextual emoji varies by subtype: a bug and a general note are not the same.
+    expect(JSON.stringify(bug.blocks)).not.toEqual(generalJson);
+    expect(JSON.stringify(bug.blocks)).toContain('🐛');
+  });
+  it('renders a booking as a field grid', () => {
+    const { blocks } = renderEvent({
+      type: 'booking',
+      payload: { name: 'Sam', email: 'sam@x.com', start: 'May 30', notes: 'migration' },
+    } as any, { siteLabel: 'decrevel.dev' });
+    const fieldBlock = blocks.find((b) => b.type === 'section' && 'fields' in b);
+    expect(fieldBlock).toBeDefined();
+    const json = JSON.stringify(blocks);
+    expect(json).toContain('Name');
+    expect(json).toContain('Sam');
+    expect(json).toContain('When');
+    expect(json).toContain('📅');
   });
   it('renders a cron table as a fenced code block', () => {
     const { blocks } = renderEvent({

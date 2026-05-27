@@ -21,7 +21,7 @@ const subSectionSchema = z.object({ header: z.string(), lines: z.array(z.string(
 // Per-type payloads. Kept permissive where the renderer tolerates missing fields.
 const payloads = {
   error: z.object({ message: z.string(), route: z.string().optional(), stack: z.string().optional(), source: z.string().optional() }),
-  seo_report: z.object({ siteLabel: z.string(), clicks: z.number(), impressions: z.number(), topQueries: z.array(z.string()).optional(), subSections: z.array(subSectionSchema).optional() }),
+  seo_report: z.object({ siteLabel: z.string(), clicks: z.number(), impressions: z.number(), topQueries: z.array(z.string()).optional(), subSections: z.array(subSectionSchema).optional(), footerNote: z.string().optional() }),
   signup: z.object({ email: z.string(), name: z.string().optional() }),
   subscription: z.object({ email: z.string(), kind: z.enum(['new', 'upgrade', 'cancel', 'payment_failed', 'refund', 'addon']), plan: z.string().optional(), amount: z.number().optional(), interval: z.string().optional() }),
   feedback: z.object({
@@ -45,7 +45,7 @@ const payloads = {
   infra: z.object({ host: z.string(), message: z.string(), metric: z.string().optional() }),
   booking: z.object({ name: z.string(), email: z.string(), start: z.string(), notes: z.string().optional() }),
   contact: z.object({ name: z.string(), email: z.string(), message: z.string(), source: z.string().optional() }),
-  generic: z.object({ title: z.string(), body: z.string(), fields: z.array(z.object({ label: z.string(), value: z.string() })).optional(), context: z.string().optional(), subSections: z.array(subSectionSchema).optional(), table: tableSchema.optional() }),
+  generic: z.object({ title: z.string(), body: z.string(), fields: z.array(z.object({ label: z.string(), value: z.string() })).optional(), context: z.string().optional(), subSections: z.array(subSectionSchema).optional(), table: tableSchema.optional(), emoji: z.string().optional(), footerNote: z.string().optional() }),
   raw: z.object({ text: z.string(), blocks: z.array(z.record(z.unknown())).optional() }),
 } as const;
 

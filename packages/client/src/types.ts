@@ -22,6 +22,6 @@ export type LoopEvent =
   | (LoopEventBase & { type: 'infra'; payload: { host: string; message: string; metric?: string } })
   | (LoopEventBase & { type: 'booking'; payload: { name: string; email: string; start: string; notes?: string } })
   | (LoopEventBase & { type: 'contact'; payload: { name: string; email: string; message: string; source?: string } })
-  | (LoopEventBase & { type: 'seo_report'; payload: { siteLabel: string; clicks: number; impressions: number; topQueries?: string[]; subSections?: LoopSubSection[] } })
-  | (LoopEventBase & { type: 'generic'; category: LoopCategory; payload: { title: string; body: string; fields?: { label: string; value: string }[]; context?: string; subSections?: LoopSubSection[]; table?: LoopTable } })
+  | (LoopEventBase & { type: 'seo_report'; payload: { siteLabel: string; clicks: number; impressions: number; topQueries?: string[]; subSections?: LoopSubSection[]; footerNote?: string } })
+  | (LoopEventBase & { type: 'generic'; category: LoopCategory; payload: { title: string; body: string; fields?: { label: string; value: string }[]; context?: string; subSections?: LoopSubSection[]; table?: LoopTable; emoji?: string; footerNote?: string } })
   | (LoopEventBase & { type: 'raw'; category: LoopCategory; payload: { text: string; blocks?: Record<string, unknown>[] } });
