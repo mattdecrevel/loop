@@ -21,6 +21,54 @@ function blockText(block: SlackBlock): string {
   return '';
 }
 
+interface ActionElement {
+  type: string;
+  url?: string;
+  style?: 'primary' | 'danger';
+  text?: { text?: string };
+}
+
+function ActionsBlock({ block }: { block: SlackBlock }) {
+  const elements = (block.elements as ActionElement[] | undefined) ?? [];
+  return (
+    <div className="mt-1 flex flex-wrap gap-2">
+      {elements.map((el, i) => {
+        const label = el.text?.text ?? '';
+        // URL buttons are real links (enabled). Server-handled buttons (no url) stay disabled.
+        if (el.url) {
+          return (
+            <a
+              key={i}
+              href={el.url}
+              target="_blank"
+              rel="noreferrer"
+              className={
+                el.style === 'primary'
+                  ? 'rounded border border-primary bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90'
+                  : 'rounded border px-2.5 py-1 text-xs font-medium hover:bg-muted'
+              }
+            >
+              {label}
+            </a>
+          );
+        }
+        return (
+          <button
+            key={i}
+            type="button"
+            disabled
+            title="Coming in Phase 2"
+            className="cursor-not-allowed rounded border border-dashed px-2.5 py-1 text-xs font-medium text-muted-foreground opacity-60"
+          >
+            {label}
+            <span className="ml-1 text-[10px] uppercase">Phase 2</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function PreviewCard({ type }: { type: EventType }) {
   const sample = SAMPLES[type];
   const parsed = parseEvent(sample);
@@ -71,13 +119,17 @@ function PreviewCard({ type }: { type: EventType }) {
                 </span>
               </div>
               <div className="mt-1 space-y-2 text-sm leading-relaxed">
-                {bodyBlocks.map((b, i) => (
-                  <div
-                    key={i}
-                    className="[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_pre]:mt-1 [&_pre]:overflow-x-auto [&_pre]:rounded [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:font-mono [&_pre]:text-xs"
-                    dangerouslySetInnerHTML={{ __html: mrkdwnToHtml(blockText(b)) }}
-                  />
-                ))}
+                {bodyBlocks.map((b, i) => {
+                  if (b.type === 'actions') return <ActionsBlock key={i} block={b} />;
+                  if (b.type === 'divider') return <hr key={i} className="border-border" />;
+                  return (
+                    <div
+                      key={i}
+                      className="[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_pre]:mt-1 [&_pre]:overflow-x-auto [&_pre]:rounded [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:font-mono [&_pre]:text-xs"
+                      dangerouslySetInnerHTML={{ __html: mrkdwnToHtml(blockText(b)) }}
+                    />
+                  );
+                })}
               </div>
 
               {/* Phase 2 action pills (disabled placeholders) */}
