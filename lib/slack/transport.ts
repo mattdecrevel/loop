@@ -21,6 +21,20 @@ export async function postToChannel(text: string, blocks: SlackBlock[], channelI
   }
 }
 
+/** Edit a previously posted message in place via chat.update. Returns ok. */
+export async function chatUpdate(channel: string, ts: string, text: string, blocks: SlackBlock[]): Promise<boolean> {
+  const token = process.env.SLACK_BOT_TOKEN;
+  if (!token) return false;
+  const res = await fetch('https://slack.com/api/chat.update', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ channel, ts, text, blocks }),
+  });
+  const d = (await res.json()) as { ok: boolean; error?: string };
+  if (!d.ok) console.error('[loop/slack] chat.update', d.error);
+  return d.ok;
+}
+
 /** Post the rendered payload to an arbitrary incoming webhook (override target). */
 export async function postToWebhook(text: string, blocks: SlackBlock[], url: string): Promise<PostResult> {
   try {
