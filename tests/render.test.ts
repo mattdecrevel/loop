@@ -44,9 +44,17 @@ describe('renderEvent', () => {
     const { blocks } = renderEvent({ type: 'raw', payload: { text: 't', blocks: [{ type: 'divider' }] } } as any);
     expect(blocks).toEqual([{ type: 'divider' }]);
   });
-  it('appends a context footer for non-raw types', () => {
-    const { blocks } = renderEvent({ type: 'error', payload: { message: 'boom' } } as any);
+  it('appends a source context footer for non-raw types', () => {
+    const { blocks } = renderEvent({ type: 'error', payload: { message: 'boom' } } as any, { siteLabel: 'decrevel.dev' });
     expect(blocks.at(-1)?.type).toBe('context');
+  });
+  it('omits any timestamp from the source footer', () => {
+    const { blocks } = renderEvent({ type: 'error', payload: { message: 'boom' } } as any, { siteLabel: 'decrevel.dev' });
+    const footer = blocks.at(-1) as unknown as { type: string; elements: { text: string }[] };
+    expect(footer.type).toBe('context');
+    const text = footer.elements[0].text;
+    expect(text).toContain('decrevel.dev');
+    expect(text).not.toMatch(/\d:\d\d/);
   });
   it('omits the footer for raw passthrough', () => {
     const { blocks } = renderEvent({ type: 'raw', payload: { text: 't', blocks: [{ type: 'divider' }] } } as any);

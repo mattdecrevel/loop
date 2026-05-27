@@ -6,10 +6,6 @@ export function context(text: string): SlackBlock {
   return { type: 'context', elements: [{ type: 'mrkdwn', text }] };
 }
 
-function fmtTime(d: Date): string {
-  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-}
-
 /** Render an aligned monospace table inside a code block. */
 export function codeTable(columns: string[], rows: (string | number)[][]): string {
   const widths = columns.map((c, i) => Math.max(c.length, ...rows.map((r) => String(r[i] ?? '').length)));
@@ -20,6 +16,7 @@ export function codeTable(columns: string[], rows: (string | number)[][]): strin
 }
 
 export interface RichSubSection { header: string; lines: string[] }
+export interface RichField { label: string; value: string }
 
 export interface RichMessageInput {
   emoji: string;
@@ -29,35 +26,44 @@ export interface RichMessageInput {
   body?: string;
   steps?: string[];                 // numbered list (bug repro)
   subSections?: RichSubSection[];   // bold header + key/value lines (digests)
-  meta?: (string | null | undefined)[];
+  fields?: RichField[];             // 2-col key/value grid (section.fields)
   table?: { columns: string[]; rows: (string | number)[][] };  // monospace code block
-  siteLabel?: string;              // footer source domain (preferred)
-  projectSlug?: string;            // footer fallback
-  time?: Date;
+  meta?: (string | null | undefined)[];  // → muted context block
+  footerNote?: string;             // optional helpful note in the footer (e.g. "Anthropic budget: $2.43 of $25.00 this month")
+  siteLabel?: string;              // source footer (preferred)
+  projectSlug?: string;            // source footer fallback
 }
 
 export function richMessage(input: RichMessageInput): SlackBlock[] {
-  const lines: string[] = [];
-  lines.push(`${input.emoji} *${input.title}*${input.subject ? ` · ${input.subject}` : ''}`);
-  if (input.breadcrumb) lines.push(`_${input.breadcrumb}_`);
-  if (input.body) lines.push(input.body);
+  const head: string[] = [];
+  head.push(`${input.emoji} *${input.title}*${input.subject ? ` · ${input.subject}` : ''}`);
+  if (input.breadcrumb) head.push(`_${input.breadcrumb}_`);
+  if (input.body) head.push(input.body);
   if (input.steps?.length) {
-    lines.push('*Steps*');
-    input.steps.forEach((s, i) => lines.push(`${i + 1}. ${s}`));
+    head.push('*Steps*');
+    input.steps.forEach((s, i) => head.push(`${i + 1}. ${s}`));
   }
   for (const ss of input.subSections ?? []) {
-    lines.push('');
-    lines.push(`*${ss.header}*`);
-    lines.push(...ss.lines);
+    head.push('');
+    head.push(`*${ss.header}*`);
+    head.push(...ss.lines);
   }
-  const meta = (input.meta ?? []).filter((m): m is string => Boolean(m && m.trim()));
-  if (meta.length) { lines.push(''); lines.push(meta.join(' · ')); }
 
-  const blocks: SlackBlock[] = [section(lines.join('\n'))];
+  const blocks: SlackBlock[] = [section(head.join('\n'))];
+
+  if (input.fields?.length) {
+    blocks.push({
+      type: 'section',
+      fields: input.fields.map((f) => ({ type: 'mrkdwn', text: `*${f.label}*\n${f.value}` })),
+    });
+  }
   if (input.table) blocks.push(section(codeTable(input.table.columns, input.table.rows)));
 
+  const meta = (input.meta ?? []).filter((m): m is string => Boolean(m && m.trim()));
+  if (meta.length) blocks.push(context(meta.join('  ·  ')));
+
   const source = input.siteLabel ?? input.projectSlug;
-  const footer = [source, fmtTime(input.time ?? new Date())].filter(Boolean).join(' · ');
+  const footer = [input.footerNote, source].filter((s): s is string => Boolean(s && s.trim())).join('  ·  ');
   if (footer) blocks.push(context(footer));
   return blocks;
 }
