@@ -24,7 +24,7 @@ const payloads = {
   error: z.object({ message: z.string(), route: z.string().optional(), stack: z.string().optional(), source: z.string().optional() }),
   seo_report: z.object({ siteLabel: z.string(), clicks: z.number(), impressions: z.number(), topQueries: z.array(z.string()).optional(), subSections: z.array(subSectionSchema).optional() }),
   signup: z.object({ email: z.string(), name: z.string().optional() }),
-  subscription: z.object({ email: z.string(), kind: z.enum(['new', 'upgrade', 'downgrade', 'cancel', 'expired', 'payment_failed', 'refund', 'addon']), plan: z.string().optional(), amount: z.number().optional(), interval: z.string().optional(), endsAt: z.string().optional() }),
+  subscription: z.object({ email: z.string(), kind: z.enum(['new', 'upgrade', 'downgrade', 'cancel', 'expired', 'payment_failed', 'refund', 'addon']), plan: z.string().optional(), amount: z.number().optional(), interval: z.string().optional(), endsAt: z.string().optional(), source: z.string().optional(), variant: z.string().optional(), subscriptionId: z.string().optional() }),
   feedback: z.object({
     category: z.enum(['bug', 'question', 'feature', 'general']),
     message: z.string(),

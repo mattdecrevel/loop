@@ -121,7 +121,7 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
         text: `Subscription ${p.kind} — ${p.email}`,
         blocks: richMessage({
           ...base, emoji, title: 'Subscription', subject: String(p.kind), body: p.email,
-          meta: [p.plan, amt, p.endsAt ? `ends ${p.endsAt}` : null],
+          meta: [p.plan, amt, p.endsAt ? `ends ${p.endsAt}` : null, p.source, p.variant ? `\`${p.variant}\`` : null, p.subscriptionId ? `sub ${p.subscriptionId}` : null],
         }),
       };
     }

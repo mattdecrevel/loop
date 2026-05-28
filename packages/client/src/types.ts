@@ -45,6 +45,10 @@ export interface SignupPayload {
   email: string;
   name?: string;
 }
+// Common billing sources; the `(string & {})` keeps autocomplete for these
+// while still accepting any other provider without a package bump.
+export type LoopSubscriptionSource = 'lemon' | 'apple_iap' | 'stripe' | (string & {});
+
 export interface SubscriptionPayload {
   email: string;
   kind: 'new' | 'upgrade' | 'downgrade' | 'cancel' | 'expired' | 'payment_failed' | 'refund' | 'addon';
@@ -52,6 +56,9 @@ export interface SubscriptionPayload {
   amount?: number;
   interval?: string;
   endsAt?: string;
+  source?: LoopSubscriptionSource;
+  variant?: string;
+  subscriptionId?: string;
 }
 export interface FeedbackPayload {
   category: 'bug' | 'question' | 'feature' | 'general';
