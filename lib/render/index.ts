@@ -1,5 +1,5 @@
 import type { ParsedEvent } from '@/lib/events/schemas';
-import { section, richMessage, type ActionButton, type InteractiveButton, type SlackBlock } from './blocks';
+import { section, richMessage, type ActionButton, type InteractiveButton, type RichField, type SlackBlock } from './blocks';
 import { googleCalendarUrl } from './calendar';
 
 export interface Rendered { text: string; blocks: SlackBlock[] }
@@ -153,18 +153,22 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
     }
 
     case 'booking': {
-      const bodyLines = [`*${p.name}*${p.notes ? ` · ${p.notes}` : ''}`, `🗓️ ${p.start}`, `📧 ${p.email}`];
-      if (p.location) bodyLines.push(`📍 ${p.location}`);
-      const actions: ActionButton[] = [{ emoji: '📧', text: 'Email', url: `mailto:${p.email}` }];
-      if (p.startIso) actions.push({ emoji: '📅', text: 'Add to Calendar', style: 'primary',
+      const fields: RichField[] = [
+        { label: 'When', value: String(p.start) },
+        { label: 'Email', value: String(p.email) },
+      ];
+      if (p.location) fields.push({ label: 'Location', value: String(p.location) });
+      const actions: ActionButton[] = [{ text: 'Email', url: `mailto:${p.email}` }];
+      if (p.startIso) actions.push({ text: 'Add to Calendar', style: 'primary',
         url: googleCalendarUrl({ title: p.notes || `Booking — ${p.name}`, startIso: p.startIso, endIso: p.endIso, location: p.location }) });
-      if (p.manageUrl) actions.push({ emoji: '🗓️', text: 'Reschedule', url: p.manageUrl });
+      if (p.manageUrl) actions.push({ text: 'Reschedule', url: p.manageUrl });
       actions.push(...linkActions);
       return {
         text: `New booking — ${p.name}`,
         blocks: richMessage({
-          ...base, emoji, title: 'New Booking', body: bodyLines.join('\n'),
-          actions, divider: true,
+          ...base, emoji, header: true, title: 'New Booking',
+          body: `*${p.name}*${p.notes ? ` · ${p.notes}` : ''}`,
+          fields, actions, divider: true,
         }),
       };
     }

@@ -23,6 +23,7 @@ export interface InteractiveButton { text: string; actionId: string; value?: str
 export interface RichMessageInput {
   emoji: string;
   title: string;
+  header?: boolean;                 // render the title as a Slack header block (larger heading) instead of a bold section line
   subject?: string;                 // ` · {subject}` on the title line (e.g. "Ada on Pipeline")
   breadcrumb?: string;              // muted line under the title (e.g. "A > B > C")
   body?: string;
@@ -40,8 +41,13 @@ export interface RichMessageInput {
 }
 
 export function richMessage(input: RichMessageInput): SlackBlock[] {
+  const blocks: SlackBlock[] = [];
   const head: string[] = [];
-  head.push(`${input.emoji} *${input.title}*${input.subject ? ` · ${input.subject}` : ''}`);
+  if (input.header) {
+    blocks.push({ type: 'header', text: { type: 'plain_text', text: `${input.emoji} ${input.title}`, emoji: true } });
+  } else {
+    head.push(`${input.emoji} *${input.title}*${input.subject ? ` · ${input.subject}` : ''}`);
+  }
   if (input.breadcrumb) head.push(`_${input.breadcrumb}_`);
   if (input.body) head.push(input.body);
   if (input.steps?.length) {
@@ -53,8 +59,7 @@ export function richMessage(input: RichMessageInput): SlackBlock[] {
     head.push(`*${ss.header}*`);
     head.push(...ss.lines);
   }
-
-  const blocks: SlackBlock[] = [section(head.join('\n'))];
+  if (head.length) blocks.push(section(head.join('\n')));
 
   if (input.fields?.length) {
     blocks.push({

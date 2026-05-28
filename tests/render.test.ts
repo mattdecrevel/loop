@@ -53,8 +53,9 @@ describe('renderEvent', () => {
     expect(urls).toContain('mailto:sam@x.com');
     expect(urls.some((u) => u?.includes('calendar.google.com'))).toBe(false);
     const json = JSON.stringify(blocks);
-    expect(json).toContain('📅');
-    expect(json).toContain('🗓️ May 30');
+    expect(blocks[0].type).toBe('header'); // bigger heading, not a bold section line
+    expect(json).toContain('New Booking');
+    expect(json).toContain('May 30'); // "When" field
   });
   it('adds an Add-to-Calendar button and a preceding divider when startIso is supplied', () => {
     const { blocks } = renderEvent({
@@ -73,7 +74,7 @@ describe('renderEvent', () => {
     expect(urls).toContain('mailto:sam@x.com');
     expect(urls.some((u) => u?.includes('calendar.google.com'))).toBe(true);
     expect(urls).toContain('https://cal.com/booking/abc123');
-    expect(JSON.stringify(blocks)).toContain('📍 Google Meet');
+    expect(JSON.stringify(blocks)).toContain('Google Meet'); // "Location" field
   });
   it('renders a cron table as a fenced code block', () => {
     const { blocks } = renderEvent({
