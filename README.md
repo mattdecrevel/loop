@@ -106,25 +106,21 @@ Pages: **Projects** (mint keys) · **Channels** (name → Slack channel ID) · *
 
 ---
 
-## Publishing the client
+## Releasing the client
 
-`packages/client` publishes to **public npm** via `.github/workflows/publish-client.yml` (workflow_dispatch or a `client-v*` tag). Requires the `NPM_TOKEN` repo secret (an npm Automation token with publish access to the `@mattdecrevel` scope) — and a public repo for `--provenance`.
+`packages/client` publishes to **public npm** via `.github/workflows/publish-client.yml`. One click does the whole sequence — bump → commit → tag → npm publish (with provenance) → GitHub Release with auto-generated notes.
 
-**Release sequence:**
+**Fire a release:**
 
 ```bash
-# 1. Bump the version
-cd packages/client && npm version <patch|minor|major>
-
-# 2. Commit + push main, then tag-push to publish
-git add packages/client/package.json
-git commit -m "chore: bump client to v$(node -p 'require(\"./packages/client/package.json\").version')"
-git push origin main
-git tag "client-v$(node -p 'require(\"./packages/client/package.json\").version')"
-git push origin "client-v$(node -p 'require(\"./packages/client/package.json\").version')"
+gh workflow run publish-client.yml -f bump=patch   # or minor / major
 ```
 
-The tag push fires the workflow, which: builds → publishes to npm with provenance → creates a GitHub Release with auto-generated notes from your commits. See [releases](https://github.com/mattdecrevel/loop/releases).
+…or via the GitHub Actions UI: **Actions → "Release client 🚀" → Run workflow → pick the bump**.
+
+Requires the `NPM_TOKEN` repo secret (npm Automation token with publish access to the `@mattdecrevel` scope). Public repo + `id-token: write` give us `--provenance` for free.
+
+A `client-v*` tag push still works as a fallback (publishes + releases, skips the bump+commit step) for re-releasing without a version bump. See [releases](https://github.com/mattdecrevel/loop/releases).
 
 ---
 
