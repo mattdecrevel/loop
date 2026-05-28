@@ -50,6 +50,27 @@ try {
 }
 ```
 
+### Typed helpers (recommended)
+
+Per-type sugar over `notify()` — less boilerplate, harder to misuse. Each helper
+takes the typed payload + optional `LoopExtras` (`severity`, `links`, `footerNote`,
+`digest`, `idempotencyKey`, `actions`, override `category`).
+
+```ts
+await loop.signup({ email: 'ada@example.com', name: 'Ada' });
+await loop.subscription({ email, kind: 'new', plan: 'Pro', amount: 29, interval: 'mo', source: 'lemon' });
+await loop.feedback({ category: 'bug', message: 'Toggle broken', userEmail, page });
+await loop.cron({ name: 'nightly-sync', ok: true, summary: '42 records' });
+await loop.booking({ name, email, start, startIso, location });
+await loop.contact({ name, email, message, source: 'form' });
+await loop.error(err, { route: '/api/checkout', links: [{ label: 'View in Sentry', url: sentryUrl }] });
+
+// `generic` and `raw` require an explicit routing category:
+await loop.generic({ title: 'Deploy', body: 'shipped' }, 'ops');
+```
+
+Use `notify(event)` directly when you want full control over the envelope.
+
 ### Options
 
 | Option      | Default                       | Description                          |
