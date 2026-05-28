@@ -1,3 +1,4 @@
+import { and, eq } from 'drizzle-orm';
 import { db } from './db';
 import { events } from './db/schema';
 import { parseEvent, type ParsedEvent } from './events/schemas';
@@ -13,6 +14,21 @@ export function validateIngest(input: unknown): { ok: true; event: ParsedEvent }
 
 /** Full pipeline: render -> resolve route -> post -> record. Returns event id. */
 export async function ingestEvent(project: AuthedProject, ev: ParsedEvent): Promise<{ status: string }> {
+  // Idempotency: if the caller supplied an idempotencyKey and we've already
+  // recorded an event for (project, key), short-circuit before any work. The
+  // unique partial index on (project_id, idempotency_key) is the belt; this
+  // explicit lookup is the suspenders + gives us a clean 'duplicate' return.
+  if (ev.idempotencyKey) {
+    const existing = await db
+      .select({ id: events.id })
+      .from(events)
+      .where(and(eq(events.projectId, project.id), eq(events.idempotencyKey, ev.idempotencyKey)))
+      .limit(1);
+    if (existing.length > 0) {
+      return { status: 'duplicate' };
+    }
+  }
+
   const rendered = renderEvent(ev, {
     siteLabel: project.name, projectSlug: project.slug, time: new Date(),
     githubRepo: project.githubRepo, autofixEnabled: project.autofixEnabled,
