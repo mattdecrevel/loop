@@ -53,9 +53,12 @@ describe('renderEvent', () => {
     expect(urls).toContain('mailto:sam@x.com');
     expect(urls.some((u) => u?.includes('calendar.google.com'))).toBe(false);
     const json = JSON.stringify(blocks);
-    expect(blocks[0].type).toBe('header'); // bigger heading, not a bold section line
-    expect(json).toContain('New Booking');
-    expect(json).toContain('May 30'); // "When" field
+    // Booking leads with an inline title section (no big 'New Booking' header
+    // block) — name + notes inline as subject, details stacked below.
+    expect(blocks[0].type).toBe('section');
+    expect(json).toContain('*Sam*');
+    expect(json).toContain('migration');
+    expect(json).toContain('May 30'); // "When" line
   });
   it('renders Email / Join Meet / Reschedule buttons (no Add-to-Calendar) and a preceding divider', () => {
     const { blocks } = renderEvent({

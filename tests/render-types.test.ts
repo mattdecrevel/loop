@@ -64,8 +64,12 @@ describe('renderEvent — per-type baseline snapshots', () => {
 
   it('booking', () => {
     const { text, blocks } = renderEvent(ev({ type: 'booking', category: 'bookings', payload: { name: 'Ada', email: 'a@b.com', start: 'May 30' } }), { siteLabel: 'demo.dev' });
+    // Slack notification text still includes 'New booking' framing for sidebar previews.
     expect(text).toBe('New booking — Ada');
-    expect(blocks[0].type).toBe('header');
+    // The booking renderer no longer uses a big header block — it leads with
+    // an inline title line so the name + 📅 emoji are the opening signal.
+    expect(blocks[0].type).toBe('section');
+    expect(JSON.stringify(blocks[0])).toContain('*Ada*');
   });
 
   it('contact', () => {
