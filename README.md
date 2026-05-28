@@ -66,6 +66,8 @@ await loop.notify({ type: 'signup', payload: { email, name } });
 
 Mint a project + API key with the operator console (`/projects`) or `pnpm seed:project <slug> "<Site Name>" [owner/repo]`.
 
+**Tuple exports (0.4.0+):** the client exports `LOOP_CATEGORIES`, `LOOP_SEVERITIES`, `LOOP_ACTIONS`, `LOOP_EVENT_TYPES`, and `LOOP_EVENT_STATUSES` as `as const` tuples — handy for building admin dropdowns or validating inputs without re-declaring the taxonomy. See [`packages/client/README.md`](packages/client/README.md) for the dropdown pattern.
+
 ---
 
 ## Routing & overrides
@@ -133,14 +135,21 @@ A `client-v*` tag push still works as a fallback (publishes + releases, skips th
 
 ## Status & roadmap
 
-**Built:** ingest + API-key auth · routing engine w/ overrides · all event renderers (rich-hybrid house style) · bot transport · operator console · Phase 2 interactivity (GitHub issues + resolve-on-close) · published client (`0.2.0`).
+**Built:**
+- Ingest + API-key auth · routing engine w/ overrides · all event renderers (rich-hybrid house style) · bot transport · operator console.
+- Phase 2 interactivity — GitHub issue creation + resolve-on-close webhook.
+- **Idempotency enforced** — `(project_id, idempotency_key)` partial unique index + lookup in `lib/ingest.ts`; duplicates return `{ status: 'duplicate' }` instead of double-posting.
+- **Digest aggregation cron** — `/api/cron/digest` runs every 6h (`vercel.json`), groups suppressed events by `(project, category)`, and posts the rolling summary. `digest: true` is safe in production.
+- **To-Do / Remind buttons** — `add_todo` / `remind_1h` / `remind_24h` action handlers in `/api/slack/interactions`, rendered when an event opts in via `actions: ['todo', 'remind']`. Reminder cron at `/api/cron/reminders` runs every 5 minutes.
+- **Read API** — Bearer-authed (`LOOP_READ_KEY`) endpoint at `/api/read` returning counts + recent events for the decrevel.dev dashboard.
+- **Published client** — `@mattdecrevel/loop@0.4.0` on public npm, including the new `LOOP_CATEGORIES` / `LOOP_SEVERITIES` / `LOOP_ACTIONS` / `LOOP_EVENT_TYPES` / `LOOP_EVENT_STATUSES` tuple exports.
 
-**Deferred (Phase 3):**
-- **To-Do / Remind buttons** — the `todos` / `reminders` tables, action handlers, and crons are not built yet (the `'todo'`/`'remind'` actions are accepted in the wire contract but not rendered or handled).
-- **Digest** — events accept `digest: true` and are recorded as `digested` (suppressed from immediate posting), **but the aggregation cron that posts the rolling summary is not built yet** — so don't set `digest: true` in production until it lands, or those events won't surface.
-- **Read API** — a Bearer-authed endpoint for the decrevel.dev dashboard to pull Loop stats.
-- **Idempotency** — `idempotencyKey` is recorded but not yet enforced (no dedup), so retries can double-post.
-- **agent-seo SEO digest** still posts via its own adapter Slack webhook (not through Loop) — candidate to reroute to a `seo_report` event.
+**Open:**
+- **Client tests** — `@mattdecrevel/loop` SDK has zero Vitest coverage.
+- **Service tests** — no Vitest coverage on ingest / routing / render / crons.
+- **Uptime monitoring** — `/api/health` exists but nothing pings it.
+- **agent-seo SEO digest reroute** — still posts via its own adapter Slack webhook; candidate to flip to a Loop `seo_report` event.
+- **DB backup drill** — Neon does daily backups; restore has never been tested end-to-end.
 
 ---
 
