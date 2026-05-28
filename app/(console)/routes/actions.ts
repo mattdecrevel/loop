@@ -34,7 +34,7 @@ export async function createRoute(formData: FormData): Promise<CreateRouteResult
   } else if (targetKind === 'webhook') {
     if (!targetWebhookUrlRaw) return { error: 'Enter a webhook URL for this route.' };
     try {
-      // eslint-disable-next-line no-new
+       
       new URL(targetWebhookUrlRaw);
     } catch {
       return { error: 'Webhook URL is not a valid URL.' };
