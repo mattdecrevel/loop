@@ -21,9 +21,12 @@ import {
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { CategoryBadge, SeverityBadge, StatusBadge } from '@/components/console/badges';
+import { RelativeTime } from '@/components/console/relative-time';
 
 export const dynamic = 'force-dynamic';
 
+// SSR fallback formatter. Locale-undefined here is fine because RelativeTime
+// swaps to the client locale immediately on mount.
 function fmtTime(d: Date): string {
   return new Date(d).toLocaleString(undefined, {
     month: 'short',
@@ -123,7 +126,9 @@ export default async function EventsPage({
               <TableBody>
                 {rows.map((e) => (
                   <TableRow key={e.id}>
-                    <TableCell className="text-muted-foreground">{fmtTime(e.createdAt)}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <RelativeTime iso={e.createdAt.toISOString()} fallback={fmtTime(e.createdAt)} />
+                    </TableCell>
                     <TableCell className="font-mono text-sm">{e.projectSlug ?? '—'}</TableCell>
                     <TableCell className="font-medium">{e.type}</TableCell>
                     <TableCell>

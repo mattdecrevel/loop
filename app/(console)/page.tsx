@@ -18,6 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { CategoryBadge, SeverityBadge, StatusBadge } from '@/components/console/badges';
+import { RelativeTime } from '@/components/console/relative-time';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,7 +105,9 @@ export default async function DashboardPage() {
               <TableBody>
                 {recent.map((e) => (
                   <TableRow key={e.id}>
-                    <TableCell className="text-muted-foreground">{fmtTime(e.createdAt)}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {e.createdAt ? <RelativeTime iso={e.createdAt.toISOString()} fallback={fmtTime(e.createdAt)} /> : '—'}
+                    </TableCell>
                     <TableCell className="font-medium">{e.type}</TableCell>
                     <TableCell>
                       <CategoryBadge category={e.category} />
