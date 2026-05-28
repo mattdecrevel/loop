@@ -145,10 +145,11 @@ A `client-v*` tag push still works as a fallback (publishes + releases, skips th
 - **Published client** — `@mattdecrevel/loop@0.4.0` on public npm, including the new `LOOP_CATEGORIES` / `LOOP_SEVERITIES` / `LOOP_ACTIONS` / `LOOP_EVENT_TYPES` / `LOOP_EVENT_STATUSES` tuple exports.
 
 **Open:**
-- **Service tests** — no Vitest coverage on ingest / routing / render / crons.
-- **DB backup drill** — Neon does daily backups; restore has never been tested end-to-end.
+- **Off-Neon backup** — Neon PITR is the only backup today (24h window). Scheduled `pg_dump` → encrypted off-platform store for true disaster recovery isn't built yet. See [docs/backup-restore.md](docs/backup-restore.md) "Gaps to address".
 
 **Just shipped (since the last roadmap revision):**
+- Service tests — vitest covers ingest validation + pipeline + idempotency, routing precedence, render snapshots per event type, digest grouping, and the digest + reminders crons (63 tests added, 127 total). New `test-service.yml` workflow runs on every relevant PR.
+- DB backup runbook + drill — `docs/backup-restore.md` documents three DR scenarios with copy-pasteable commands. First drill (2026-05-28) validated the Neon branch-create + verify path: **~10s end-to-end**, all row counts and most-recent-event timestamps match production. RTO/RPO targets stated; next drill due 2026-08-28.
 - Client tests — vitest covers every typed helper, fail-open behavior, AbortController timeout, optional-field flow-through, and tuple/type alignment (42 tests). New `test-client.yml` workflow runs them on every PR touching `packages/client/**`.
 - agent-seo SEO digest rerouted — `lib/seo/agent/adapters/base.ts` in mattdecrevel.com now posts the digest as a Loop `seo_report` event (`notifyLoop({ type: 'seo_report', payload: { siteLabel, clicks, impressions, topQueries } })`). The engine's own Slack webhook path is bypassed.
 - Uptime monitoring — `/api/health` is pinged every 5 minutes by a cron in mattdecrevel.com (`/api/cron/loop-uptime`). Degraded health fires a Loop `infra` event (idempotency-keyed per hour) **and** a fallback direct Slack webhook (so a Loop outage that breaks the alert path is still surfaced).
