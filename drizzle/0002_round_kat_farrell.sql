@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "events_project_idempotency_unique" ON "events" USING btree ("project_id","idempotency_key") WHERE idempotency_key IS NOT NULL;

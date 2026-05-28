@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
-  boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid, varchar,
+  boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid, varchar,
 } from 'drizzle-orm/pg-core';
 
 export const eventCategory = pgEnum('event_category', [
@@ -57,7 +57,13 @@ export const events = pgTable('events', {
   digest: boolean('digest').notNull().default(false),
   digestPostedAt: timestamp('digest_posted_at', { withTimezone: true }),   // Phase 3 — set by the digest cron
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+}, (t) => [
+  // Enforce idempotency per project: a given (project_id, idempotency_key) pair
+  // can only appear once. Partial — rows with NULL idempotency_key are ignored.
+  uniqueIndex('events_project_idempotency_unique')
+    .on(t.projectId, t.idempotencyKey)
+    .where(sql`idempotency_key IS NOT NULL`),
+]);
 
 export const todos = pgTable('todos', {
   id: uuid('id').defaultRandom().primaryKey(),

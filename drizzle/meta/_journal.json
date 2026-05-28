@@ -15,6 +15,13 @@
       "when": 1779929288238,
       "tag": "0001_cynical_radioactive_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779975011577,
+      "tag": "0002_round_kat_farrell",
+      "breakpoints": true
     }
   ]
 }
