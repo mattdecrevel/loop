@@ -5,7 +5,7 @@ import { events, projects } from '@/lib/db/schema';
 import { richMessage } from '@/lib/render/blocks';
 import { resolveDestination } from '@/lib/routing';
 import { postToChannel, postToWebhook } from '@/lib/slack/transport';
-import type { Category } from '@/lib/events/schemas';
+import { groupPendingForDigest, digestLineFor } from '@/lib/digest/group';
 
 export const runtime = 'nodejs';
 
@@ -22,13 +22,6 @@ const CATEGORY_EMOJI: Record<string, string> = {
   users: '👤', revenue: '💳', feedback: '💬', errors: '🚨', seo: '🔎', ops: '⚙️', bookings: '📅',
 };
 
-/** Compact one-line label for a digested event from its payload. */
-function lineFor(ev: typeof events.$inferSelect): string {
-  const p = (ev.payload ?? {}) as Record<string, unknown>;
-  const candidate = p.title ?? p.message ?? p.name ?? p.summary ?? p.email ?? ev.type;
-  return `• ${String(candidate)}`;
-}
-
 export async function GET(req: Request) {
   if (!authorized(req)) return new NextResponse('unauthorized', { status: 401 });
 
@@ -43,19 +36,13 @@ export async function GET(req: Request) {
 
   if (pending.length === 0) return NextResponse.json({ ok: true, groups: 0, posted: 0, events: 0 });
 
-  // Group by (projectId, category).
-  const groups = new Map<string, { projectId: string | null; category: Category; rows: typeof pending }>();
-  for (const ev of pending) {
-    const key = `${ev.projectId ?? 'global'}::${ev.category}`;
-    const g = groups.get(key) ?? { projectId: ev.projectId, category: ev.category as Category, rows: [] };
-    g.rows.push(ev);
-    groups.set(key, g);
-  }
+  // Group by (projectId, category) — pure helper for testability.
+  const groupList = groupPendingForDigest(pending);
 
   let posted = 0;
   const stampedIds: string[] = [];
 
-  for (const g of groups.values()) {
+  for (const g of groupList) {
     if (!g.projectId) continue; // can't resolve a route without a project; skip (leave unstamped to retry)
     const [proj] = await db.select().from(projects).where(eq(projects.id, g.projectId)).limit(1);
     const dest = await resolveDestination(g.projectId, g.category);
@@ -66,7 +53,7 @@ export async function GET(req: Request) {
     }
 
     const emoji = CATEGORY_EMOJI[g.category] ?? 'ℹ️';
-    const lines = g.rows.slice(0, 20).map(lineFor);
+    const lines = g.rows.slice(0, 20).map(digestLineFor);
     const more = g.rows.length > 20 ? `…and ${g.rows.length - 20} more` : null;
     const blocks = richMessage({
       emoji,
@@ -92,5 +79,5 @@ export async function GET(req: Request) {
     await db.update(events).set({ digestPostedAt: sql`now()` }).where(inArray(events.id, stampedIds));
   }
 
-  return NextResponse.json({ ok: true, groups: groups.size, posted, events: stampedIds.length });
+  return NextResponse.json({ ok: true, groups: groupList.length, posted, events: stampedIds.length });
 }
