@@ -144,8 +144,7 @@ A `client-v*` tag push still works as a fallback (publishes + releases, skips th
 - **Read API** — Bearer-authed (`LOOP_READ_KEY`) endpoint at `/api/read` returning counts + recent events for the decrevel.dev dashboard.
 - **Published client** — `@mattdecrevel/loop@0.4.0` on public npm, including the new `LOOP_CATEGORIES` / `LOOP_SEVERITIES` / `LOOP_ACTIONS` / `LOOP_EVENT_TYPES` / `LOOP_EVENT_STATUSES` tuple exports.
 
-**Open:**
-- **Off-Neon backup** — Neon PITR is the only backup today (24h window). Scheduled `pg_dump` → encrypted off-platform store for true disaster recovery isn't built yet. See [docs/backup-restore.md](docs/backup-restore.md) "Gaps to address".
+**Open:** Nothing on the active roadmap right now — see [docs/backup-restore.md](docs/backup-restore.md) "Gaps to address" for the deliberately-deferred off-Neon dump (Neon's 24h PITR is considered sufficient for the data Loop holds today).
 
 **Just shipped (since the last roadmap revision):**
 - Service tests — vitest covers ingest validation + pipeline + idempotency, routing precedence, render snapshots per event type, digest grouping, and the digest + reminders crons (63 tests added, 127 total). New `test-service.yml` workflow runs on every relevant PR.
