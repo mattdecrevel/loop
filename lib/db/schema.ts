@@ -8,6 +8,8 @@ export const eventCategory = pgEnum('event_category', [
 ]);
 export const eventSeverity = pgEnum('event_severity', ['info', 'warning', 'error']);
 export const eventStatus = pgEnum('event_status', ['posted', 'skipped', 'digested', 'failed']);
+export const todoStatus = pgEnum('todo_status', ['open', 'done']);
+export const reminderStatus = pgEnum('reminder_status', ['pending', 'sent', 'cancelled']);
 
 export const projects = pgTable('projects', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -53,5 +55,29 @@ export const events = pgTable('events', {
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),  // Phase 2
   idempotencyKey: text('idempotency_key'),
   digest: boolean('digest').notNull().default(false),
+  digestPostedAt: timestamp('digest_posted_at', { withTimezone: true }),   // Phase 3 — set by the digest cron
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const todos = pgTable('todos', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  eventId: uuid('event_id').references(() => events.id, { onDelete: 'set null' }),
+  projectId: uuid('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+  text: text('text').notNull(),
+  status: todoStatus('status').notNull().default('open'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+});
+
+export const reminders = pgTable('reminders', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  eventId: uuid('event_id').references(() => events.id, { onDelete: 'set null' }),
+  projectId: uuid('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+  text: text('text').notNull(),
+  channelId: text('channel_id').notNull(),
+  messageTs: text('message_ts'),
+  remindAt: timestamp('remind_at', { withTimezone: true }).notNull(),
+  status: reminderStatus('status').notNull().default('pending'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
 });
