@@ -3,7 +3,7 @@
 Centralized Slack notification & alerts service for all decrevel projects. Sites send **typed semantic events** to one HTTP endpoint; Loop owns routing, Block Kit rendering, the Slack bot, interactivity, and the database — so every project's alerts look identical and there's one place to iterate.
 
 - **Live:** https://loop.decrevel.dev (operator console + API), Vercel team `nineteen87`, own Neon Postgres DB
-- **Client:** `@mattdecrevel/loop` (private, GitHub Packages) — the thin, fail-open SDK sites install
+- **Client:** [`@mattdecrevel/loop`](https://www.npmjs.com/package/@mattdecrevel/loop) on public npm — the thin, fail-open SDK sites install
 
 ---
 
@@ -50,12 +50,11 @@ Every event also supports (on `LoopEventBase`): `severity`, `digest`, `idempoten
 
 ## Sending events (consumer setup)
 
-Sites consume the published client exactly like `@mattdecrevel/agent-seo`:
+Sites install the published client from public npm — no auth, no `.npmrc`:
 
-1. The repo's `.npmrc` maps the `@mattdecrevel` scope to GitHub Packages with `${GITHUB_TOKEN}`.
-2. Grant the consuming repo **Read** on the `@mattdecrevel/loop` package (Package settings → *Manage Actions access*) — one-time, required for CI/Vercel installs.
-3. `transpilePackages: ['@mattdecrevel/loop']` in `next.config` (it ships raw TS).
-4. Set `LOOP_API_KEY` (the project's key) in the site's env.
+1. `npm install @mattdecrevel/loop` (or `pnpm add` / `yarn add` / `bun add`).
+2. `transpilePackages: ['@mattdecrevel/loop']` in `next.config` (it ships raw TS).
+3. Set `LOOP_API_KEY` (the project's key) in the site's env.
 
 ```ts
 import { Loop } from '@mattdecrevel/loop';
@@ -109,7 +108,23 @@ Pages: **Projects** (mint keys) · **Channels** (name → Slack channel ID) · *
 
 ## Publishing the client
 
-`packages/client` publishes to GitHub Packages via `.github/workflows/publish-client.yml` (workflow_dispatch or a `client-v*` tag; uses the Action's built-in token). To release: bump `packages/client/package.json` `version`, then `git tag client-v<version> && git push origin client-v<version>`.
+`packages/client` publishes to **public npm** via `.github/workflows/publish-client.yml` (workflow_dispatch or a `client-v*` tag). Requires the `NPM_TOKEN` repo secret (an npm Automation token with publish access to the `@mattdecrevel` scope) — and a public repo for `--provenance`.
+
+**Release sequence:**
+
+```bash
+# 1. Bump the version
+cd packages/client && npm version <patch|minor|major>
+
+# 2. Commit + push main, then tag-push to publish
+git add packages/client/package.json
+git commit -m "chore: bump client to v$(node -p 'require(\"./packages/client/package.json\").version')"
+git push origin main
+git tag "client-v$(node -p 'require(\"./packages/client/package.json\").version')"
+git push origin "client-v$(node -p 'require(\"./packages/client/package.json\").version')"
+```
+
+The tag push fires the workflow, which: builds → publishes to npm with provenance → creates a GitHub Release with auto-generated notes from your commits. See [releases](https://github.com/mattdecrevel/loop/releases).
 
 ---
 

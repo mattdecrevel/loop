@@ -9,17 +9,9 @@ times out, your application code keeps running.
 
 ## Install
 
-This package is published to GitHub Packages. Add an `.npmrc` to your repo:
-
-```
-@mattdecrevel:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
-Then:
-
 ```bash
-pnpm add @mattdecrevel/loop
+npm install @mattdecrevel/loop
+# or pnpm add / yarn add / bun add
 ```
 
 > **Next.js consumers:** this package ships raw TypeScript (no build step). Add it
