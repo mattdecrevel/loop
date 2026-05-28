@@ -18,11 +18,16 @@ export async function ingestEvent(project: AuthedProject, ev: ParsedEvent): Prom
     githubRepo: project.githubRepo, autofixEnabled: project.autofixEnabled,
   });
 
-  // Digest: the rolling-summary cron isn't built yet (Phase 3). Suppressing
-  // `digest: true` events here would silently drop them (nothing would ever
-  // post the summary), so until that cron lands we DO NOT suppress — digest
-  // events post normally and carry the `digest` flag on their row so a future
-  // aggregation cron can backfill them.
+  // Digest suppression: low-signal `digest: true` info events are not posted
+  // immediately. They are recorded as `digested` and the rolling-summary cron
+  // (/api/cron/digest) batches them into a periodic summary per category.
+  if (ev.digest && ev.severity === 'info') {
+    await db.insert(events).values({
+      projectId: project.id, type: ev.type, category: ev.category, severity: ev.severity,
+      payload: ev.payload as object, status: 'digested', idempotencyKey: ev.idempotencyKey, digest: ev.digest,
+    });
+    return { status: 'digested' };
+  }
 
   const dest = await resolveDestination(project.id, ev.category);
   if (!dest) {
