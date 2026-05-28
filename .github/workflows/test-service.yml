@@ -1,0 +1,55 @@
+name: Test service
+
+# Runs the Loop service-side vitest suite (lib/, app/) on PRs that touch the
+# Next.js app, and on pushes to main. The @mattdecrevel/loop client SDK has
+# its own workflow (test-client.yml) — this one explicitly scopes itself to
+# the service surface.
+
+on:
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'lib/**'
+      - 'tests/**'
+      - 'vitest.config.ts'
+      - 'vercel.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/test-service.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'lib/**'
+      - 'tests/**'
+      - 'vitest.config.ts'
+      - 'vercel.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/test-service.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run service tests
+        run: pnpm test
