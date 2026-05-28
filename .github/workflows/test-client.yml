@@ -1,0 +1,43 @@
+name: Test client
+
+# Runs the @mattdecrevel/loop client SDK vitest suite on PRs that touch the
+# client package, and on pushes to main.
+
+on:
+  pull_request:
+    paths:
+      - 'packages/client/**'
+      - '.github/workflows/test-client.yml'
+      - 'pnpm-lock.yaml'
+  push:
+    branches: [main]
+    paths:
+      - 'packages/client/**'
+      - '.github/workflows/test-client.yml'
+      - 'pnpm-lock.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run client tests
+        run: pnpm --filter @mattdecrevel/loop test

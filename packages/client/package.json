@@ -37,5 +37,12 @@
     "typescript",
     "webhook",
     "notification-service"
-  ]
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0"
+  }
 }
