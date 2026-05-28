@@ -18,20 +18,17 @@ export async function ingestEvent(project: AuthedProject, ev: ParsedEvent): Prom
     githubRepo: project.githubRepo, autofixEnabled: project.autofixEnabled,
   });
 
-  // Digest: persist + skip immediate post for routine info events.
-  if (ev.digest && ev.severity === 'info') {
-    await db.insert(events).values({
-      projectId: project.id, type: ev.type, category: ev.category, severity: ev.severity,
-      payload: ev.payload as object, status: 'digested', idempotencyKey: ev.idempotencyKey, digest: true,
-    });
-    return { status: 'digested' };
-  }
+  // Digest: the rolling-summary cron isn't built yet (Phase 3). Suppressing
+  // `digest: true` events here would silently drop them (nothing would ever
+  // post the summary), so until that cron lands we DO NOT suppress — digest
+  // events post normally and carry the `digest` flag on their row so a future
+  // aggregation cron can backfill them.
 
   const dest = await resolveDestination(project.id, ev.category);
   if (!dest) {
     await db.insert(events).values({
       projectId: project.id, type: ev.type, category: ev.category, severity: ev.severity,
-      payload: ev.payload as object, status: 'skipped', idempotencyKey: ev.idempotencyKey,
+      payload: ev.payload as object, status: 'skipped', idempotencyKey: ev.idempotencyKey, digest: ev.digest,
     });
     return { status: 'skipped_no_route' };
   }
@@ -44,7 +41,7 @@ export async function ingestEvent(project: AuthedProject, ev: ParsedEvent): Prom
     projectId: project.id, type: ev.type, category: ev.category, severity: ev.severity,
     payload: ev.payload as object, status: result.ok ? 'posted' : 'failed',
     slackTs: result.ts ?? null, slackChannelId: result.channel ?? (dest.kind === 'channel' ? dest.slackChannelId : null),
-    idempotencyKey: ev.idempotencyKey,
+    idempotencyKey: ev.idempotencyKey, digest: ev.digest,
   });
 
   return { status: result.ok ? 'posted' : 'failed' };
