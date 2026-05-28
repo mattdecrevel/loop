@@ -1,5 +1,5 @@
 import type { ParsedEvent } from '@/lib/events/schemas';
-import { section, richMessage, type ActionButton, type InteractiveButton, type RichField, type SlackBlock } from './blocks';
+import { section, richMessage, type ActionButton, type InteractiveButton, type SlackBlock } from './blocks';
 
 export interface Rendered { text: string; blocks: SlackBlock[] }
 export interface RenderContext { siteLabel?: string; projectSlug?: string; time?: Date; githubRepo?: string | null; autofixEnabled?: boolean }
@@ -166,11 +166,19 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
     }
 
     case 'booking': {
-      const fields: RichField[] = [
-        { label: 'When', value: String(p.start) },
-        { label: 'Email', value: String(p.email) },
+      // Stacked label-on-each-line layout (instead of Slack's 2-column field
+      // grid). Easier to scan on mobile and avoids the grid breaking when
+      // one field's value is much longer than another's.
+      const detailLines: string[] = [
+        `*When:* ${String(p.start)}`,
+        `*Email:* ${String(p.email)}`,
       ];
-      if (p.location) fields.push({ label: 'Location', value: String(p.location) });
+      if (p.location) detailLines.push(`*Location:* ${String(p.location)}`);
+      const body = [
+        `*${p.name}*${p.notes ? ` · ${p.notes}` : ''}`,
+        '',
+        ...detailLines,
+      ].join('\n');
       // URL buttons: Email (mailto), Join Meet (if joinable URL provided),
       // Reschedule (if Cal.com manage URL provided), plus any `links` from extras.
       // The legacy "Add to Calendar" button is intentionally removed — every
@@ -195,8 +203,7 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
         text: `New booking — ${p.name}`,
         blocks: richMessage({
           ...base, emoji, header: true, title: 'New Booking',
-          body: `*${p.name}*${p.notes ? ` · ${p.notes}` : ''}`,
-          fields, actions, divider: true,
+          body, actions, divider: true,
           interactiveActions: bookingInteractive,
         }),
       };
