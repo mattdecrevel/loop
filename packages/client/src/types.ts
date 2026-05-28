@@ -139,7 +139,10 @@ export interface BookingPayload {
   notes?: string;
   startIso?: string;
   endIso?: string;
+  /** Human-readable label, e.g. "Google Meet", "Zoom", "In person at Cafe X". */
   location?: string;
+  /** Joinable video URL (Google Meet / Zoom / etc). Renders as a "Join Meet" button. */
+  meetingUrl?: string;
   durationMin?: number;
   manageUrl?: string;
 }

@@ -57,13 +57,14 @@ describe('renderEvent', () => {
     expect(json).toContain('New Booking');
     expect(json).toContain('May 30'); // "When" field
   });
-  it('adds an Add-to-Calendar button and a preceding divider when startIso is supplied', () => {
+  it('renders Email / Join Meet / Reschedule buttons (no Add-to-Calendar) and a preceding divider', () => {
     const { blocks } = renderEvent({
       type: 'booking',
       payload: {
         name: 'Sam', email: 'sam@x.com', start: 'May 30', notes: 'migration',
         startIso: '2026-05-30T18:00:00Z', endIso: '2026-05-30T18:30:00Z',
-        location: 'Google Meet', manageUrl: 'https://cal.com/booking/abc123',
+        location: 'Google Meet', meetingUrl: 'https://meet.google.com/abc-defg-hij',
+        manageUrl: 'https://cal.com/booking/abc123',
       },
     } as any, { siteLabel: 'decrevel.dev' });
     const dividerIdx = blocks.findIndex((b) => b.type === 'divider');
@@ -72,9 +73,15 @@ describe('renderEvent', () => {
     const actionsBlock = blocks[actionsIdx] as unknown as { elements: { url?: string }[] };
     const urls = actionsBlock.elements.map((e) => e.url);
     expect(urls).toContain('mailto:sam@x.com');
-    expect(urls.some((u) => u?.includes('calendar.google.com'))).toBe(true);
+    expect(urls).toContain('https://meet.google.com/abc-defg-hij');
     expect(urls).toContain('https://cal.com/booking/abc123');
+    // The legacy "Add to Calendar" button is gone — every booking source already
+    // creates the calendar event upstream, so re-adding it was duplicate work.
+    expect(urls.some((u) => u?.includes('calendar.google.com'))).toBe(false);
     expect(JSON.stringify(blocks)).toContain('Google Meet'); // "Location" field
+    // Bookings default-include the To-Do + Remind interactive buttons.
+    expect(JSON.stringify(blocks)).toContain('add_todo');
+    expect(JSON.stringify(blocks)).toContain('remind_24h');
   });
   it('renders a cron table as a fenced code block', () => {
     const { blocks } = renderEvent({

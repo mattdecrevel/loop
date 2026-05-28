@@ -59,6 +59,7 @@ export const SAMPLES: Record<EventType, unknown> = {
       startIso: '2026-05-30T18:00:00Z',
       endIso: '2026-05-30T18:30:00Z',
       location: 'Google Meet',
+      meetingUrl: 'https://meet.google.com/abc-defg-hij',
       manageUrl: 'https://cal.com/booking/abc123',
     },
   },

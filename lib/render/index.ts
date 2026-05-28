@@ -1,6 +1,5 @@
 import type { ParsedEvent } from '@/lib/events/schemas';
 import { section, richMessage, type ActionButton, type InteractiveButton, type RichField, type SlackBlock } from './blocks';
-import { googleCalendarUrl } from './calendar';
 
 export interface Rendered { text: string; blocks: SlackBlock[] }
 export interface RenderContext { siteLabel?: string; projectSlug?: string; time?: Date; githubRepo?: string | null; autofixEnabled?: boolean }
@@ -172,17 +171,33 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
         { label: 'Email', value: String(p.email) },
       ];
       if (p.location) fields.push({ label: 'Location', value: String(p.location) });
+      // URL buttons: Email (mailto), Join Meet (if joinable URL provided),
+      // Reschedule (if Cal.com manage URL provided), plus any `links` from extras.
+      // The legacy "Add to Calendar" button is intentionally removed — every
+      // realistic booking source (Cal.com, Calendly, etc.) already creates the
+      // calendar event on its own, so re-adding it was duplicate work.
       const actions: ActionButton[] = [{ text: 'Email', url: `mailto:${p.email}` }];
-      if (p.startIso) actions.push({ text: 'Add to Calendar', style: 'primary',
-        url: googleCalendarUrl({ title: p.notes || `Booking — ${p.name}`, startIso: p.startIso, endIso: p.endIso, location: p.location }) });
+      if (p.meetingUrl) actions.push({ text: '🎥 Join Meet', style: 'primary', url: String(p.meetingUrl) });
       if (p.manageUrl) actions.push({ text: 'Reschedule', url: p.manageUrl });
       actions.push(...linkActions);
+      // Bookings are always follow-up candidates — default-include To-Do +
+      // Remind interactive buttons even if the caller didn't opt in via
+      // `actions: [...]`. Other event types still require explicit opt-in.
+      const explicit = actionButtonsFor(ev);
+      const haveTodo = explicit.some(b => b.actionId === 'add_todo');
+      const haveRemind = explicit.some(b => b.actionId === 'remind_24h');
+      const bookingInteractive: InteractiveButton[] = [
+        ...(haveTodo ? [] : [{ emoji: '✅', text: 'Add to To-Do', actionId: 'add_todo' } as InteractiveButton]),
+        ...(haveRemind ? [] : [{ text: 'Remind tomorrow', actionId: 'remind_24h' } as InteractiveButton]),
+        ...explicit,
+      ];
       return {
         text: `New booking — ${p.name}`,
         blocks: richMessage({
           ...base, emoji, header: true, title: 'New Booking',
           body: `*${p.name}*${p.notes ? ` · ${p.notes}` : ''}`,
           fields, actions, divider: true,
+          interactiveActions: bookingInteractive,
         }),
       };
     }
