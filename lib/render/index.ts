@@ -11,7 +11,7 @@ function pickEmoji(ev: ParsedEvent): string {
   switch (ev.type) {
     case 'error': return '🚨';
     case 'feedback': return ({ bug: '🐛', question: '❓', feature: '💡', general: '💬' } as Record<string, string>)[p.category] ?? '💬';
-    case 'subscription': return ({ new: '🎉', upgrade: '⬆️', cancel: '👋', payment_failed: '⚠️', refund: '💸', addon: '➕' } as Record<string, string>)[p.kind] ?? '💳';
+    case 'subscription': return ({ new: '🎉', upgrade: '⬆️', downgrade: '⬇️', cancel: '👋', expired: '⌛', payment_failed: '⚠️', refund: '💸', addon: '➕' } as Record<string, string>)[p.kind] ?? '💳';
     case 'signup': return '👤';
     case 'cron': return p.ok ? '✅' : '⚠️';
     case 'infra': return ev.severity === 'error' ? '🔴' : '📡';
@@ -44,7 +44,16 @@ function issueButtons(ev: ParsedEvent, ctx?: RenderContext): InteractiveButton[]
 export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
   const p = ev.payload as Record<string, any>;
   const emoji = pickEmoji(ev);
-  const base = { siteLabel: ctx?.siteLabel, projectSlug: ctx?.projectSlug };
+  // Base-level primitives available to every non-raw type: a footer note and
+  // link buttons (rendered as URL action buttons). Per-type renderers that build
+  // their own URL buttons append these so nothing is clobbered.
+  const linkActions: ActionButton[] = ev.links?.map((l) => ({ text: l.label, url: l.url })) ?? [];
+  const base = {
+    siteLabel: ctx?.siteLabel,
+    projectSlug: ctx?.projectSlug,
+    footerNote: ev.footerNote,
+    ...(linkActions.length ? { actions: linkActions } : {}),
+  };
 
   switch (ev.type) {
     case 'raw':
@@ -81,7 +90,10 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
       ];
       const feedbackIssueActions = issueButtons(ev, ctx);
       const pageUrl = typeof page === 'string' && /^https?:\/\//.test(page) ? page : null;
-      const feedbackUrlActions: ActionButton[] = pageUrl ? [{ emoji: '🔗', text: 'View Page', url: pageUrl }] : [];
+      const feedbackUrlActions: ActionButton[] = [
+        ...(pageUrl ? [{ emoji: '🔗', text: 'View Page', url: pageUrl }] : []),
+        ...linkActions,
+      ];
       const hasActions = feedbackIssueActions.length || feedbackUrlActions.length;
       return {
         text: `Feedback — ${p.category}`,
@@ -109,7 +121,7 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
         text: `Subscription ${p.kind} — ${p.email}`,
         blocks: richMessage({
           ...base, emoji, title: 'Subscription', subject: String(p.kind), body: p.email,
-          meta: [p.plan, amt],
+          meta: [p.plan, amt, p.endsAt ? `ends ${p.endsAt}` : null],
         }),
       };
     }
@@ -147,6 +159,7 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
       if (p.startIso) actions.push({ emoji: '📅', text: 'Add to Calendar', style: 'primary',
         url: googleCalendarUrl({ title: p.notes || `Booking — ${p.name}`, startIso: p.startIso, endIso: p.endIso, location: p.location }) });
       if (p.manageUrl) actions.push({ emoji: '🗓️', text: 'Reschedule', url: p.manageUrl });
+      actions.push(...linkActions);
       return {
         text: `New booking — ${p.name}`,
         blocks: richMessage({
@@ -177,7 +190,6 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
         blocks: richMessage({
           ...base, emoji, title: String(p.siteLabel), subject: 'search digest', body,
           subSections: Array.isArray(p.subSections) ? p.subSections : undefined,
-          footerNote: p.footerNote,
         }),
       };
     }
@@ -191,7 +203,6 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
           subSections: Array.isArray(p.subSections) ? p.subSections : undefined,
           table: p.table,
           meta: [p.context],
-          footerNote: p.footerNote,
         }),
       };
     }

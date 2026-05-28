@@ -17,7 +17,7 @@ export const SAMPLES: Record<EventType, unknown> = {
   },
   subscription: {
     type: 'subscription',
-    payload: { email: 'ada@example.com', kind: 'new', plan: 'Pro', amount: 29, interval: 'mo' },
+    payload: { email: 'ada@example.com', kind: 'downgrade', plan: 'Starter', amount: 9, interval: 'mo', endsAt: 'Jun 30, 2026' },
   },
   cron: {
     type: 'cron',
@@ -37,6 +37,7 @@ export const SAMPLES: Record<EventType, unknown> = {
   },
   seo_report: {
     type: 'seo_report',
+    footerNote: 'Anthropic budget: $2.43 of $25.00 this month',
     payload: {
       siteLabel: 'decrevel.dev',
       clicks: 312,
@@ -46,7 +47,6 @@ export const SAMPLES: Record<EventType, unknown> = {
         { header: 'Top movers', lines: ['• "loop notifications" +42 clicks', '• "drizzle neon" +18 clicks'] },
         { header: 'Health', lines: ['• 0 crawl errors', '• 3 new pages indexed'] },
       ],
-      footerNote: 'Anthropic budget: $2.43 of $25.00 this month',
     },
   },
   booking: {
@@ -64,6 +64,7 @@ export const SAMPLES: Record<EventType, unknown> = {
   },
   error: {
     type: 'error',
+    links: [{ label: 'View in Sentry', url: 'https://sentry.io/organizations/decrevel/issues/12345/' }],
     payload: {
       message: 'Cannot read properties of undefined (reading "id")',
       route: '/api/export',

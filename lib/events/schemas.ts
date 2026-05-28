@@ -17,13 +17,14 @@ const tableSchema = z.object({
   rows: z.array(z.array(z.union([z.string(), z.number()]))),
 });
 const subSectionSchema = z.object({ header: z.string(), lines: z.array(z.string()) });
+const linkSchema = z.object({ label: z.string(), url: z.string() });
 
 // Per-type payloads. Kept permissive where the renderer tolerates missing fields.
 const payloads = {
   error: z.object({ message: z.string(), route: z.string().optional(), stack: z.string().optional(), source: z.string().optional() }),
-  seo_report: z.object({ siteLabel: z.string(), clicks: z.number(), impressions: z.number(), topQueries: z.array(z.string()).optional(), subSections: z.array(subSectionSchema).optional(), footerNote: z.string().optional() }),
+  seo_report: z.object({ siteLabel: z.string(), clicks: z.number(), impressions: z.number(), topQueries: z.array(z.string()).optional(), subSections: z.array(subSectionSchema).optional() }),
   signup: z.object({ email: z.string(), name: z.string().optional() }),
-  subscription: z.object({ email: z.string(), kind: z.enum(['new', 'upgrade', 'cancel', 'payment_failed', 'refund', 'addon']), plan: z.string().optional(), amount: z.number().optional(), interval: z.string().optional() }),
+  subscription: z.object({ email: z.string(), kind: z.enum(['new', 'upgrade', 'downgrade', 'cancel', 'expired', 'payment_failed', 'refund', 'addon']), plan: z.string().optional(), amount: z.number().optional(), interval: z.string().optional(), endsAt: z.string().optional() }),
   feedback: z.object({
     category: z.enum(['bug', 'question', 'feature', 'general']),
     message: z.string(),
@@ -45,7 +46,7 @@ const payloads = {
   infra: z.object({ host: z.string(), message: z.string(), metric: z.string().optional() }),
   booking: z.object({ name: z.string(), email: z.string(), start: z.string(), notes: z.string().optional(), startIso: z.string().optional(), endIso: z.string().optional(), location: z.string().optional(), durationMin: z.number().optional(), manageUrl: z.string().optional() }),
   contact: z.object({ name: z.string(), email: z.string(), message: z.string(), source: z.string().optional() }),
-  generic: z.object({ title: z.string(), body: z.string(), fields: z.array(z.object({ label: z.string(), value: z.string() })).optional(), context: z.string().optional(), subSections: z.array(subSectionSchema).optional(), table: tableSchema.optional(), emoji: z.string().optional(), footerNote: z.string().optional() }),
+  generic: z.object({ title: z.string(), body: z.string(), fields: z.array(z.object({ label: z.string(), value: z.string() })).optional(), context: z.string().optional(), subSections: z.array(subSectionSchema).optional(), table: tableSchema.optional(), emoji: z.string().optional() }),
   raw: z.object({ text: z.string(), blocks: z.array(z.record(z.unknown())).optional() }),
 } as const;
 
@@ -58,13 +59,15 @@ const baseEnvelope = z.object({
   actions: z.array(actionEnum).optional(),
   digest: z.boolean().optional().default(false),
   idempotencyKey: z.string().optional(),
+  links: z.array(linkSchema).optional(),
+  footerNote: z.string().optional(),
   payload: z.unknown(),
 });
 
 export type ParsedEvent = {
   type: EventType; category: Category; severity: 'info' | 'warning' | 'error';
   actions: ('issue' | 'autofix' | 'todo' | 'remind')[]; digest: boolean;
-  idempotencyKey?: string; payload: unknown;
+  idempotencyKey?: string; links?: { label: string; url: string }[]; footerNote?: string; payload: unknown;
 };
 
 export function parseEvent(input: unknown): { success: true; data: ParsedEvent } | { success: false; error: string } {
@@ -85,7 +88,7 @@ export function parseEvent(input: unknown): { success: true; data: ParsedEvent }
     data: {
       type: type as EventType, category, severity: env.data.severity,
       actions: env.data.actions ?? [], digest: env.data.digest,
-      idempotencyKey: env.data.idempotencyKey, payload: p.data,
+      idempotencyKey: env.data.idempotencyKey, links: env.data.links, footerNote: env.data.footerNote, payload: p.data,
     },
   };
 }

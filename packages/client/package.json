@@ -1,6 +1,6 @@
 {
   "name": "@mattdecrevel/loop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Thin fail-open client for the Loop notification service.",
   "license": "UNLICENSED",
   "type": "module",

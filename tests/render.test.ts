@@ -122,6 +122,68 @@ describe('renderEvent', () => {
   });
 });
 
+describe('base-level links + footerNote primitives', () => {
+  function actions(blocks: any[]) {
+    return blocks.find((b) => b.type === 'actions') as { elements: { url?: string; text?: { text: string } }[] } | undefined;
+  }
+  it('renders base-level links as URL buttons on a non-booking event', () => {
+    const { blocks } = renderEvent({
+      type: 'error',
+      links: [{ label: 'View in Sentry', url: 'https://sentry.io/issues/1' }],
+      payload: { message: 'boom' },
+    } as any, { siteLabel: 'decrevel.dev' });
+    const a = actions(blocks);
+    expect(a).toBeDefined();
+    const urls = a!.elements.map((e) => e.url);
+    expect(urls).toContain('https://sentry.io/issues/1');
+    expect(JSON.stringify(blocks)).toContain('View in Sentry');
+  });
+  it('appends base-level links onto a bookings own action buttons', () => {
+    const { blocks } = renderEvent({
+      type: 'booking',
+      links: [{ label: 'Open CRM', url: 'https://crm.example.com/lead/9' }],
+      payload: { name: 'Sam', email: 'sam@x.com', start: 'May 30' },
+    } as any, { siteLabel: 'decrevel.dev' });
+    const a = actions(blocks);
+    const urls = a!.elements.map((e) => e.url);
+    expect(urls).toContain('mailto:sam@x.com');
+    expect(urls).toContain('https://crm.example.com/lead/9');
+  });
+  it('renders footerNote in the footer context block on an arbitrary event', () => {
+    const { blocks } = renderEvent({
+      type: 'signup',
+      footerNote: 'MRR: $4,210 this month',
+      payload: { email: 'a@b.com', name: 'Ada' },
+    } as any, { siteLabel: 'decrevel.dev' });
+    const footer = blocks.at(-1) as unknown as { type: string; elements: { text: string }[] };
+    expect(footer.type).toBe('context');
+    expect(footer.elements[0].text).toContain('MRR: $4,210 this month');
+    expect(footer.elements[0].text).toContain('decrevel.dev');
+  });
+});
+
+describe('subscription downgrade + expired kinds', () => {
+  it('renders a downgrade subscription with the ⬇️ emoji and an ends meta when endsAt is set', () => {
+    const { blocks } = renderEvent({
+      type: 'subscription',
+      payload: { email: 'a@b.com', kind: 'downgrade', plan: 'Starter', endsAt: 'Jun 30, 2026' },
+    } as any, { siteLabel: 'decrevel.dev' });
+    const json = JSON.stringify(blocks);
+    expect(json).toContain('⬇️');
+    expect(json).toContain('downgrade');
+    expect(json).toContain('ends Jun 30, 2026');
+  });
+  it('renders an expired subscription with the ⌛ emoji', () => {
+    const { blocks } = renderEvent({
+      type: 'subscription',
+      payload: { email: 'a@b.com', kind: 'expired' },
+    } as any);
+    const json = JSON.stringify(blocks);
+    expect(json).toContain('⌛');
+    expect(json).toContain('expired');
+  });
+});
+
 describe('issue buttons (gated by repo)', () => {
   function actions(blocks: any[]) {
     return blocks.find((b) => b.type === 'actions') as { elements: { action_id?: string; url?: string; style?: string }[] } | undefined;

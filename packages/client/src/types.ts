@@ -18,6 +18,10 @@ export interface LoopField {
   label: string;
   value: string;
 }
+export interface LoopLink {
+  label: string;
+  url: string;
+}
 
 export interface LoopEventBase {
   category?: LoopCategory;
@@ -25,6 +29,8 @@ export interface LoopEventBase {
   actions?: LoopAction[];
   digest?: boolean;
   idempotencyKey?: string;
+  links?: LoopLink[];
+  footerNote?: string;
 }
 
 // ─── Per-type payloads ───
@@ -41,10 +47,11 @@ export interface SignupPayload {
 }
 export interface SubscriptionPayload {
   email: string;
-  kind: 'new' | 'upgrade' | 'cancel' | 'payment_failed' | 'refund' | 'addon';
+  kind: 'new' | 'upgrade' | 'downgrade' | 'cancel' | 'expired' | 'payment_failed' | 'refund' | 'addon';
   plan?: string;
   amount?: number;
   interval?: string;
+  endsAt?: string;
 }
 export interface FeedbackPayload {
   category: 'bug' | 'question' | 'feature' | 'general';
@@ -98,7 +105,6 @@ export interface SeoReportPayload {
   impressions: number;
   topQueries?: string[];
   subSections?: LoopSubSection[];
-  footerNote?: string;
 }
 export interface GenericPayload {
   title: string;
@@ -108,7 +114,6 @@ export interface GenericPayload {
   subSections?: LoopSubSection[];
   table?: LoopTable;
   emoji?: string;
-  footerNote?: string;
 }
 export interface RawPayload {
   text: string;
