@@ -90,3 +90,20 @@ Every event also accepts these optional base fields:
 - `footerNote` — a short context line in the footer (e.g. a budget/spend figure)
 - `digest` — fold routine `info` events into a rolling summary *(handler not yet active — see the service README roadmap)*
 - `idempotencyKey` — recorded for dedup *(enforcement pending)*
+
+### Runtime tuples (for dashboards, dropdowns, filters)
+
+The union types above are derived from `as const` tuples that are also exported,
+so consumer UIs can iterate the values at runtime without redeclaring them:
+
+```ts
+import {
+  LOOP_CATEGORIES,        // → LoopCategory
+  LOOP_SEVERITIES,        // → LoopSeverity
+  LOOP_ACTIONS,           // → LoopAction
+  LOOP_EVENT_TYPES,       // → LoopEventType
+  LOOP_EVENT_STATUSES,    // → LoopEventStatus (server-side delivery status)
+} from '@mattdecrevel/loop/types';
+
+<Select>{LOOP_CATEGORIES.map(c => <Option key={c}>{c}</Option>)}</Select>
+```

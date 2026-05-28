@@ -2,9 +2,52 @@
 // One named payload per event type + a small `Event<T, P>` helper so the
 // union stays DRY and each payload is referenceable on its own.
 
-export type LoopCategory = 'users' | 'revenue' | 'feedback' | 'errors' | 'seo' | 'ops' | 'bookings';
-export type LoopSeverity = 'info' | 'warning' | 'error';
-export type LoopAction = 'issue' | 'autofix' | 'todo' | 'remind';
+// Tuples are the source of truth; the union types are derived from them.
+// This lets consumers (dashboards, dropdowns, filter UIs) iterate the values
+// at runtime without redeclaring them.
+export const LOOP_CATEGORIES = [
+  'users',
+  'revenue',
+  'feedback',
+  'errors',
+  'seo',
+  'ops',
+  'bookings',
+] as const;
+export type LoopCategory = (typeof LOOP_CATEGORIES)[number];
+
+export const LOOP_SEVERITIES = ['info', 'warning', 'error'] as const;
+export type LoopSeverity = (typeof LOOP_SEVERITIES)[number];
+
+export const LOOP_ACTIONS = ['issue', 'autofix', 'todo', 'remind'] as const;
+export type LoopAction = (typeof LOOP_ACTIONS)[number];
+
+export const LOOP_EVENT_TYPES = [
+  'error',
+  'signup',
+  'subscription',
+  'feedback',
+  'cron',
+  'infra',
+  'booking',
+  'contact',
+  'seo_report',
+  'generic',
+  'raw',
+] as const;
+export type LoopEventType = (typeof LOOP_EVENT_TYPES)[number];
+
+// Server-side delivery status for an ingested event. Not part of the wire
+// contract sent by clients — exported here so the operator dashboard can
+// reuse the same vocabulary without redeclaring it.
+export const LOOP_EVENT_STATUSES = [
+  'posted',
+  'failed',
+  'skipped',
+  'digested',
+  'duplicate',
+] as const;
+export type LoopEventStatus = (typeof LOOP_EVENT_STATUSES)[number];
 
 export interface LoopTable {
   columns: string[];
