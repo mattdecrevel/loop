@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Boxes, Hash, Route, Activity, Eye, CheckSquare } from 'lucide-react';
+import { LayoutDashboard, Boxes, Hash, Route, Activity, Eye, CheckSquare, Bell } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: '/routes', label: 'Routes', icon: Route },
   { href: '/events', label: 'Events', icon: Activity },
   { href: '/todos', label: 'Todos', icon: CheckSquare },
+  { href: '/reminders', label: 'Reminders', icon: Bell },
   { href: '/previews', label: 'Previews', icon: Eye },
 ];
 
