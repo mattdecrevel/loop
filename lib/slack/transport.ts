@@ -2,15 +2,16 @@ import type { SlackBlock } from '@/lib/render/blocks';
 
 export interface PostResult { ok: boolean; ts?: string; channel?: string; error?: string }
 
-/** Post via bot token to a channel ID. Returns ts for later chat.update (Phase 2). */
-export async function postToChannel(text: string, blocks: SlackBlock[], channelId: string): Promise<PostResult> {
+/** Post via bot token to a channel ID. Returns ts for later chat.update (Phase 2).
+ * Pass `threadTs` to post as a threaded reply (e.g. reminder re-surfacing). */
+export async function postToChannel(text: string, blocks: SlackBlock[], channelId: string, threadTs?: string): Promise<PostResult> {
   const token = process.env.SLACK_BOT_TOKEN;
   if (!token) return { ok: false, error: 'SLACK_BOT_TOKEN not set' };
   try {
     const res = await fetch('https://slack.com/api/chat.postMessage', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ channel: channelId, text, blocks }),
+      body: JSON.stringify({ channel: channelId, text, blocks, ...(threadTs ? { thread_ts: threadTs } : {}) }),
     });
     const data = (await res.json()) as { ok: boolean; ts?: string; channel?: string; error?: string };
     if (!data.ok) { console.error('[loop/slack] chat.postMessage:', data.error); return { ok: false, error: data.error }; }
