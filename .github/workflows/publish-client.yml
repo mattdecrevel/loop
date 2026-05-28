@@ -1,8 +1,9 @@
 name: Publish client
 
-# Publishes @mattdecrevel/loop (packages/client) to GitHub Packages.
-# Run manually (workflow_dispatch) or by pushing a tag like `client-v0.1.0`.
-# Uses the Action's built-in GITHUB_TOKEN (packages: write) — no PAT needed.
+# Publishes @mattdecrevel/loop (packages/client) to npm.
+# Run manually (workflow_dispatch) or by pushing a tag like `client-v0.2.0`.
+# Requires NPM_TOKEN secret — create an Automation token at npmjs.com and add
+# it to the repo's Actions secrets as NPM_TOKEN.
 
 on:
   workflow_dispatch:
@@ -12,20 +13,26 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@mattdecrevel'
-      - name: Publish to GitHub Packages
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build client
+        working-directory: packages/client
+        run: pnpm run build
+      - name: Publish to npm
         working-directory: packages/client
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,33 +1,14 @@
 # @mattdecrevel/loop
 
-Thin, fail-open client for the [Loop](https://loop.decrevel.dev) notification service.
+Thin, fail-open client for the [Loop](https://github.com/mattdecrevel/loop) notification service.
 
-Loop ingests typed notification events over an authenticated HTTP endpoint and
-routes them to Slack. This client is a zero-runtime-dependency wrapper around the
-`POST /api/events` endpoint. It **never throws** — if Loop is down or the request
-times out, your application code keeps running.
+Loop routes typed semantic events from your apps to Slack via a single bot — one token, one setup, zero per-project Slack config. This client POSTs events to a Loop instance and **never throws** — if Loop is unreachable or times out, your application keeps running.
 
 ## Install
 
-This package is published to GitHub Packages. Add an `.npmrc` to your repo:
-
-```
-@mattdecrevel:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
-Then:
-
 ```bash
-pnpm add @mattdecrevel/loop
+npm install @mattdecrevel/loop
 ```
-
-> **Next.js consumers:** this package ships raw TypeScript (no build step). Add it
-> to `transpilePackages` in your `next.config.ts` so Next compiles it:
->
-> ```ts
-> const nextConfig = { transpilePackages: ['@mattdecrevel/loop'] };
-> ```
 
 ## Usage
 
@@ -38,8 +19,8 @@ const loop = new Loop({ apiKey: process.env.LOOP_API_KEY! });
 
 // Fire-and-forget — never throws.
 await loop.notify({
-  type: 'contact',
-  payload: { name: 'Ada', email: 'ada@example.com', message: 'Hello!' },
+  type: 'signup',
+  payload: { email: 'ada@example.com', name: 'Ada' },
 });
 
 // Error sugar.
@@ -52,28 +33,36 @@ try {
 
 ### Options
 
-| Option      | Default                       | Description                          |
-| ----------- | ----------------------------- | ------------------------------------ |
-| `apiKey`    | (required)                    | Loop project API key (`loop_pk_…`).  |
-| `baseUrl`   | `https://loop.decrevel.dev`   | Override the Loop service base URL.  |
-| `timeoutMs` | `3000`                        | Abort the request after this many ms.|
-
-## Fail-open guarantee
-
-Every method swallows errors, logs to `console.error`, and resolves. Notifications
-are best-effort — they will never block or break the calling application.
+| Option      | Default                       | Description                                      |
+| ----------- | ----------------------------- | ------------------------------------------------ |
+| `apiKey`    | (required)                    | Project API key — mint one in the Loop console.  |
+| `baseUrl`   | `https://loop.decrevel.dev`   | Override if you're self-hosting Loop.            |
+| `timeoutMs` | `3000`                        | Abort the request after this many ms.            |
 
 ## Event types
 
-See `./types` (`LoopEvent`) for the full set of supported event types and their
-payload shapes: `error`, `signup`, `subscription`, `feedback`, `cron`, `infra`,
-`booking`, `contact`, `seo_report`, `generic`, `raw`.
+Import `LoopEvent` from `@mattdecrevel/loop/types` for the full set of typed payloads:
 
-Every event also accepts these optional base fields:
+| type            | default `category` | description                                          |
+| --------------- | ------------------ | ---------------------------------------------------- |
+| `error`         | `errors`           | Error with optional stack, route, source             |
+| `signup`        | `users`            | New user registration                                |
+| `subscription`  | `revenue`          | Billing events (new / upgrade / cancel / etc.)       |
+| `feedback`      | `feedback`         | Bug reports, feature requests, questions             |
+| `cron`          | `ops`              | Cron job results with optional table                 |
+| `infra`         | `ops`              | Infrastructure / homelab alerts                      |
+| `booking`       | `bookings`         | Booking confirmations with calendar link             |
+| `contact`       | `bookings`         | Contact form submissions                             |
+| `seo_report`    | `seo`              | Search metrics digest                                |
+| `generic`       | (required)         | Escape hatch: title / body / fields / table          |
+| `raw`           | (required)         | Pre-built Block Kit passthrough                      |
 
-- `severity` — `'info' | 'warning' | 'error'`
-- `category` — override the default routing category
-- `links` — `{ label, url }[]`, rendered as URL buttons on the message (e.g. "View in Sentry")
-- `footerNote` — a short context line in the footer (e.g. a budget/spend figure)
-- `digest` — fold routine `info` events into a rolling summary *(handler not yet active — see the service README roadmap)*
-- `idempotencyKey` — recorded for dedup *(enforcement pending)*
+Every event also accepts: `severity`, `category` (override routing), `links: {label,url}[]` (rendered as URL buttons), `footerNote`, `digest`, and `idempotencyKey`.
+
+## Self-hosting
+
+See the [Loop server README](https://github.com/mattdecrevel/loop) for how to deploy your own Loop instance. Point this client at it with `baseUrl`.
+
+## Fail-open guarantee
+
+Every method swallows errors, logs to `console.error`, and resolves. Notifications are best-effort — they will never block or break the calling application.
