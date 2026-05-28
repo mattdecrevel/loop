@@ -145,11 +145,13 @@ A `client-v*` tag push still works as a fallback (publishes + releases, skips th
 - **Published client** — `@mattdecrevel/loop@0.4.0` on public npm, including the new `LOOP_CATEGORIES` / `LOOP_SEVERITIES` / `LOOP_ACTIONS` / `LOOP_EVENT_TYPES` / `LOOP_EVENT_STATUSES` tuple exports.
 
 **Open:**
-- **Client tests** — `@mattdecrevel/loop` SDK has zero Vitest coverage.
 - **Service tests** — no Vitest coverage on ingest / routing / render / crons.
-- **Uptime monitoring** — `/api/health` exists but nothing pings it.
-- **agent-seo SEO digest reroute** — still posts via its own adapter Slack webhook; candidate to flip to a Loop `seo_report` event.
 - **DB backup drill** — Neon does daily backups; restore has never been tested end-to-end.
+
+**Just shipped (since the last roadmap revision):**
+- Client tests — vitest covers every typed helper, fail-open behavior, AbortController timeout, optional-field flow-through, and tuple/type alignment (42 tests). New `test-client.yml` workflow runs them on every PR touching `packages/client/**`.
+- agent-seo SEO digest rerouted — `lib/seo/agent/adapters/base.ts` in mattdecrevel.com now posts the digest as a Loop `seo_report` event (`notifyLoop({ type: 'seo_report', payload: { siteLabel, clicks, impressions, topQueries } })`). The engine's own Slack webhook path is bypassed.
+- Uptime monitoring — `/api/health` is pinged every 5 minutes by a cron in mattdecrevel.com (`/api/cron/loop-uptime`). Degraded health fires a Loop `infra` event (idempotency-keyed per hour) **and** a fallback direct Slack webhook (so a Loop outage that breaks the alert path is still surfaced).
 
 ---
 
