@@ -68,3 +68,12 @@ are best-effort — they will never block or break the calling application.
 See `./types` (`LoopEvent`) for the full set of supported event types and their
 payload shapes: `error`, `signup`, `subscription`, `feedback`, `cron`, `infra`,
 `booking`, `contact`, `seo_report`, `generic`, `raw`.
+
+Every event also accepts these optional base fields:
+
+- `severity` — `'info' | 'warning' | 'error'`
+- `category` — override the default routing category
+- `links` — `{ label, url }[]`, rendered as URL buttons on the message (e.g. "View in Sentry")
+- `footerNote` — a short context line in the footer (e.g. a budget/spend figure)
+- `digest` — fold routine `info` events into a rolling summary *(handler not yet active — see the service README roadmap)*
+- `idempotencyKey` — recorded for dedup *(enforcement pending)*
