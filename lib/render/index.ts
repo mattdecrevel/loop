@@ -174,11 +174,6 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
         `*Email:* ${String(p.email)}`,
       ];
       if (p.location) detailLines.push(`*Location:* ${String(p.location)}`);
-      const body = [
-        `*${p.name}*${p.notes ? ` · ${p.notes}` : ''}`,
-        '',
-        ...detailLines,
-      ].join('\n');
       // URL buttons: Email (mailto), Join Meet (if joinable URL provided),
       // Reschedule (if Cal.com manage URL provided), plus any `links` from extras.
       // The legacy "Add to Calendar" button is intentionally removed — every
@@ -202,8 +197,14 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
       return {
         text: `New booking — ${p.name}`,
         blocks: richMessage({
-          ...base, emoji, header: true, title: 'New Booking',
-          body, actions, divider: true,
+          // Title is the booker's name, with notes (if any) inline as subject.
+          // No redundant "New Booking" header block — the 📅 emoji + name + meet/
+          // reschedule buttons are enough context, and the Slack notification
+          // text above still reads "New booking — <name>" for sidebar previews.
+          ...base, emoji, title: p.name,
+          subject: p.notes ? String(p.notes) : undefined,
+          body: detailLines.join('\n'),
+          actions, divider: true,
           interactiveActions: bookingInteractive,
         }),
       };
