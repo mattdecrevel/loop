@@ -28,6 +28,20 @@ function cap(s: string): string {
 }
 
 /**
+ * Opt-in To-Do / Remind buttons. Only rendered when the caller includes
+ * `'todo'` / `'remind'` in the event's `actions`, so default messages stay clean.
+ */
+function actionButtonsFor(ev: ParsedEvent): InteractiveButton[] {
+  const out: InteractiveButton[] = [];
+  if (ev.actions?.includes('todo')) out.push({ emoji: '✅', text: 'Add to To-Do', actionId: 'add_todo' });
+  if (ev.actions?.includes('remind')) {
+    out.push({ text: 'Remind 1h', actionId: 'remind_1h' });
+    out.push({ text: 'Remind tomorrow', actionId: 'remind_24h' });
+  }
+  return out;
+}
+
+/**
  * Build the Create Issue / + Auto-Fix interactive buttons for issue-eligible types.
  * Gated on the project having a github_repo. error/feedback are issue-eligible by default.
  */
@@ -66,7 +80,7 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
         const trimmed = String(p.stack).split('\n').slice(0, 6).join('\n');
         body += `\n\`\`\`${trimmed}\`\`\``;
       }
-      const errorIssueActions = issueButtons(ev, ctx);
+      const errorIssueActions = [...issueButtons(ev, ctx), ...actionButtonsFor(ev)];
       return {
         text: `Error — ${p.message}`,
         blocks: richMessage({
@@ -88,7 +102,7 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
         [p.browser, p.viewport].filter(Boolean).join(' / ') || null,
         [p.screen, p.locale, p.timezone].filter(Boolean).join(' · ') || null,
       ];
-      const feedbackIssueActions = issueButtons(ev, ctx);
+      const feedbackIssueActions = [...issueButtons(ev, ctx), ...actionButtonsFor(ev)];
       const pageUrl = typeof page === 'string' && /^https?:\/\//.test(page) ? page : null;
       const feedbackUrlActions: ActionButton[] = [
         ...(pageUrl ? [{ emoji: '🔗', text: 'View Page', url: pageUrl }] : []),

@@ -223,6 +223,29 @@ describe('issue buttons (gated by repo)', () => {
   });
 });
 
+describe('opt-in to-do + remind buttons', () => {
+  function actions(blocks: any[]) {
+    return blocks.find((b) => b.type === 'actions') as { elements: { action_id?: string }[] } | undefined;
+  }
+  it('error with actions [todo,remind] yields add_todo + remind_1h + remind_24h', () => {
+    const { blocks } = renderEvent({ type: 'error', actions: ['todo', 'remind'], payload: { message: 'boom' } } as any, {});
+    const ids = actions(blocks)!.elements.map((e) => e.action_id);
+    expect(ids).toContain('add_todo');
+    expect(ids).toContain('remind_1h');
+    expect(ids).toContain('remind_24h');
+  });
+  it('omits to-do/remind buttons by default (empty actions)', () => {
+    const { blocks } = renderEvent({ type: 'error', actions: [], payload: { message: 'boom' } } as any, {});
+    expect(actions(blocks)).toBeUndefined();
+  });
+  it('feedback with actions [todo] yields add_todo and no remind buttons', () => {
+    const { blocks } = renderEvent({ type: 'feedback', actions: ['todo'], payload: { category: 'bug', message: 'x' } } as any, {});
+    const ids = actions(blocks)!.elements.map((e) => e.action_id);
+    expect(ids).toContain('add_todo');
+    expect(ids).not.toContain('remind_1h');
+  });
+});
+
 describe('richMessage actions', () => {
   it('renders an actions block of URL buttons before the footer', () => {
     const blocks = richMessage({
