@@ -82,16 +82,19 @@ export const SAMPLE_ENTRIES = [
     type: 'seo_report',
     envelope: {
       type: 'seo_report',
-      footerNote: 'Anthropic budget: $2.43 of $25.00 this month',
       payload: {
         siteLabel: 'decrevel.dev',
         clicks: 312,
         impressions: 8420,
         topQueries: ['matt decrevel', 'agentic workflows', 'next.js notification service'],
-        subSections: [
-          { header: 'Top movers', lines: ['• "loop notifications" +42 clicks', '• "drizzle neon" +18 clicks'] },
-          { header: 'Health', lines: ['• 0 crawl errors', '• 3 new pages indexed'] },
-        ],
+        product: {
+          signups24h: 4,
+          paidConversions7d: 1,
+          totalUsers: 128,
+          paidUsers: 12,
+          mrrUsd: 96,
+        },
+        budget: { spentUsd: 2.43, capUsd: 25 },
       },
     },
   },

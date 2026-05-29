@@ -22,7 +22,7 @@ const linkSchema = z.object({ label: z.string(), url: z.string() });
 // Per-type payloads. Kept permissive where the renderer tolerates missing fields.
 const payloads = {
   error: z.object({ message: z.string(), route: z.string().optional(), stack: z.string().optional(), source: z.string().optional() }),
-  seo_report: z.object({ siteLabel: z.string(), clicks: z.number(), impressions: z.number(), topQueries: z.array(z.string()).optional(), subSections: z.array(subSectionSchema).optional() }),
+  seo_report: z.object({ siteLabel: z.string(), clicks: z.number(), impressions: z.number(), topQueries: z.array(z.string()).optional(), product: z.object({ signups24h: z.number().optional(), paidConversions7d: z.number().optional(), totalUsers: z.number().optional(), paidUsers: z.number().optional(), mrrUsd: z.number().optional() }).optional(), budget: z.object({ spentUsd: z.number(), capUsd: z.number() }).optional(), subSections: z.array(subSectionSchema).optional() }),
   signup: z.object({ email: z.string(), name: z.string().optional(), kind: z.enum(['signup', 'waitlist']).optional() }),
   subscription: z.object({ email: z.string(), kind: z.enum(['new', 'upgrade', 'downgrade', 'cancel', 'expired', 'payment_failed', 'refund', 'addon', 'addon_cancel']), plan: z.string().optional(), amount: z.number().optional(), interval: z.string().optional(), endsAt: z.string().optional(), source: z.string().optional(), variant: z.string().optional(), subscriptionId: z.string().optional() }),
   feedback: z.object({

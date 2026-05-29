@@ -165,11 +165,28 @@ export interface ContactPayload {
   message: string;
   source?: string;
 }
+/** Product metrics for an SEO digest — rendered as a standard "Product" section. */
+export interface SeoProductMetrics {
+  signups24h?: number;
+  paidConversions7d?: number;
+  totalUsers?: number;
+  paidUsers?: number;
+  mrrUsd?: number;
+}
+/** Agent spend for the month → rendered as the standard budget footer. */
+export interface SeoBudget {
+  spentUsd: number;
+  capUsd: number;
+}
 export interface SeoReportPayload {
   siteLabel: string;
   clicks: number;
   impressions: number;
   topQueries?: string[];
+  /** Raw product numbers; Loop formats them into the standard Product section. */
+  product?: SeoProductMetrics;
+  /** Month-to-date agent spend; Loop formats the standard budget footer. */
+  budget?: SeoBudget;
   subSections?: LoopSubSection[];
 }
 export interface GenericPayload {

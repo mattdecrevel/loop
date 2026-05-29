@@ -16,7 +16,7 @@ function pickEmoji(ev: ParsedEvent): string {
     case 'infra': return ev.severity === 'error' ? '🔴' : '📡';
     case 'booking': return '📅';
     case 'contact': return '✉️';
-    case 'seo_report': return '🔎';
+    case 'seo_report': return '📈';
     case 'generic': return (p.emoji as string) ?? 'ℹ️';
     default: return 'ℹ️';
   }
@@ -229,16 +229,42 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
     }
 
     case 'seo_report': {
-      const ctr = p.impressions > 0 ? ((p.clicks / p.impressions) * 100).toFixed(2) : '0.00';
-      let body = `${p.clicks} clicks · ${p.impressions} impressions · ${ctr}% CTR`;
-      if (Array.isArray(p.topQueries) && p.topQueries.length) {
-        body += `\n${p.topQueries.slice(0, 5).map((x: string) => `• ${x}`).join('\n')}`;
+      const ctr = p.impressions > 0 ? ((p.clicks / p.impressions) * 100).toFixed(1) : '0.0';
+      // Standard digest layout, rendered centrally so every site is identical:
+      //   Search (7d) · Product (24h/7d, when sent) · then any caller subSections.
+      const subSections: { header: string; lines: string[] }[] = [
+        {
+          header: 'Search · last 7 days',
+          lines: [
+            `impressions: *${p.impressions}*   clicks: *${p.clicks}*   CTR: *${ctr}%*`,
+            ...(Array.isArray(p.topQueries) && p.topQueries.length
+              ? p.topQueries.slice(0, 5).map((x: string) => `• ${x}`)
+              : []),
+          ],
+        },
+      ];
+      const pr = p.product;
+      if (pr) {
+        const lines: string[] = [];
+        if (pr.signups24h != null) lines.push(`signups (24h): *${pr.signups24h}*`);
+        if (pr.paidConversions7d != null) lines.push(`paid conversions (7d): *${pr.paidConversions7d}*`);
+        if (pr.totalUsers != null) lines.push(`total users: *${pr.totalUsers}*`);
+        if (pr.paidUsers != null) lines.push(`paid users: *${pr.paidUsers}*`);
+        if (pr.mrrUsd != null) lines.push(`MRR: *$${pr.mrrUsd.toFixed(2)}*`);
+        if (lines.length) subSections.push({ header: 'Product · last 24h / 7d', lines });
       }
+      if (Array.isArray(p.subSections)) subSections.push(...p.subSections);
+      // Budget footer: explicit footerNote wins; otherwise derive the standard
+      // line from the structured budget numbers. siteLabel is appended as source.
+      const budgetNote = p.budget
+        ? `Anthropic budget: $${Number(p.budget.spentUsd).toFixed(2)} of $${Number(p.budget.capUsd).toFixed(2)} this month`
+        : undefined;
       return {
-        text: `${p.siteLabel} — ${p.clicks}c/${p.impressions}i`,
+        text: `SEO digest · ${p.siteLabel} — ${p.clicks}c/${p.impressions}i`,
         blocks: richMessage({
-          ...base, emoji, title: String(p.siteLabel), subject: 'search digest', body,
-          subSections: Array.isArray(p.subSections) ? p.subSections : undefined,
+          ...base, emoji, title: 'SEO digest', subject: String(p.siteLabel),
+          subSections,
+          footerNote: base.footerNote ?? budgetNote,
         }),
       };
     }
