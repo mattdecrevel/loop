@@ -7,7 +7,8 @@ import { logout } from '../login/actions';
 export default function ConsoleLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-muted/20">
-      <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar md:flex">
+      {/* Sticky sidebar — stays pinned while the main column scrolls. */}
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r bg-sidebar md:flex">
         <div className="flex items-center gap-2 px-5 py-5">
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-semibold">
             L

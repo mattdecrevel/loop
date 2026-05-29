@@ -2,7 +2,6 @@ import { desc } from 'drizzle-orm';
 
 import { db } from '@/lib/db';
 import { projects } from '@/lib/db/schema';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
@@ -13,6 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { NewProject } from './new-project';
+import { ProjectRowActions } from './project-row-actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,8 +62,8 @@ export default async function ProjectsPage() {
                   <TableHead>Slug</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>GitHub repo</TableHead>
-                  <TableHead>Autofix</TableHead>
                   <TableHead>Created</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -74,12 +74,16 @@ export default async function ProjectsPage() {
                     <TableCell className="text-muted-foreground">
                       {p.githubRepo ?? '—'}
                     </TableCell>
-                    <TableCell>
-                      <Badge variant={p.autofixEnabled ? 'default' : 'secondary'}>
-                        {p.autofixEnabled ? 'on' : 'off'}
-                      </Badge>
-                    </TableCell>
                     <TableCell className="text-muted-foreground">{fmtDate(p.createdAt)}</TableCell>
+                    <TableCell className="text-right">
+                      <ProjectRowActions
+                        id={p.id}
+                        slug={p.slug}
+                        name={p.name}
+                        githubRepo={p.githubRepo}
+                        autofixEnabled={p.autofixEnabled}
+                      />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
