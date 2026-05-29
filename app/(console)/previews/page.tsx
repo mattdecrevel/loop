@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { db } from '@/lib/db';
 import { projects } from '@/lib/db/schema';
-import { parseEvent, type EventType } from '@/lib/events/schemas';
+import { parseEvent } from '@/lib/events/schemas';
 import { renderEvent } from '@/lib/render';
 import type { SlackBlock } from '@/lib/render/blocks';
 import { mrkdwnToHtml } from '@/lib/render/mrkdwn-to-html';
-import { SAMPLES, SAMPLE_TYPES } from '@/lib/render/samples';
+import { SAMPLE_ENTRIES, type SampleEntry } from '@/lib/render/samples';
 import { FireAllButton } from './fire-all-button';
 import { ProjectPicker } from './project-picker';
 import { SendLiveButton } from './send-button';
@@ -80,15 +80,14 @@ function ActionsBlock({ block }: { block: SlackBlock }) {
   );
 }
 
-function PreviewCard({ type, previewSlug }: { type: EventType; previewSlug: string }) {
-  const sample = SAMPLES[type];
-  const parsed = parseEvent(sample);
+function PreviewCard({ entry, previewSlug }: { entry: SampleEntry; previewSlug: string }) {
+  const parsed = parseEvent(entry.envelope);
 
   if (!parsed.success) {
     return (
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-3">
-          <code className="text-sm font-medium">{type}</code>
+          <code className="text-sm font-medium">{entry.label}</code>
           <Badge variant="destructive">parse error</Badge>
         </CardHeader>
         <CardContent>
@@ -103,7 +102,7 @@ function PreviewCard({ type, previewSlug }: { type: EventType; previewSlug: stri
     githubRepo: 'mattdecrevel/example',
     autofixEnabled: true,
   });
-  const isRaw = type === 'raw';
+  const isRaw = entry.type === 'raw';
 
   // Split body section(s) from the trailing context footer (house-style only).
   const footer = !isRaw && blocks.at(-1)?.type === 'context' ? blockText(blocks.at(-1)!) : null;
@@ -113,10 +112,10 @@ function PreviewCard({ type, previewSlug }: { type: EventType; previewSlug: stri
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-3 space-y-0">
         <div className="flex items-center gap-2">
-          <code className="text-sm font-medium">{type}</code>
+          <code className="text-sm font-medium">{entry.label}</code>
           {isRaw ? <Badge variant="secondary">exempt</Badge> : null}
         </div>
-        <SendLiveButton type={type} projectSlug={previewSlug} />
+        <SendLiveButton sampleId={entry.id} projectSlug={previewSlug} />
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4">
@@ -197,10 +196,10 @@ export default async function PreviewsPage({ searchParams }: PageProps) {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Previews</h1>
           <p className="text-sm text-muted-foreground">
-            Every message type rendered in the &ldquo;Rich hybrid&rdquo; house style. &ldquo;Send live&rdquo; posts the real
-            sample through the selected project&apos;s pipeline; &ldquo;Fire all 11 types&rdquo; sends one of each in
-            order so you can verify routing + rendering end-to-end. Dashed pills are server-handled
-            (action_id) buttons.
+            Every message type — plus key variant kinds (waitlist signup, add-on cancel) — rendered in
+            the &ldquo;Rich hybrid&rdquo; house style. &ldquo;Send live&rdquo; posts the real sample through the
+            selected project&apos;s pipeline; &ldquo;Fire all&rdquo; sends one of each in order so you can verify
+            routing + rendering end-to-end. Dashed pills are server-handled (action_id) buttons.
           </p>
         </div>
 
@@ -221,8 +220,8 @@ export default async function PreviewsPage({ searchParams }: PageProps) {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        {SAMPLE_TYPES.map((type) => (
-          <PreviewCard key={type} type={type} previewSlug={selectedSlug} />
+        {SAMPLE_ENTRIES.map((entry) => (
+          <PreviewCard key={entry.id} entry={entry} previewSlug={selectedSlug} />
         ))}
       </div>
     </div>

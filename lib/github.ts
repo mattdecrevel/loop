@@ -31,6 +31,11 @@ export function buildIssue(type: string, payload: Record<string, unknown>): Issu
       lines.push('', '**Steps:**');
       (p.steps as unknown[]).forEach((s, i) => lines.push(`${i + 1}. ${String(s)}`));
     }
+    if (Array.isArray(p.consoleErrors) && p.consoleErrors.length) {
+      lines.push('', '**Console errors:**', '```');
+      (p.consoleErrors as unknown[]).slice(-10).forEach((e) => lines.push(String(e)));
+      lines.push('```');
+    }
     const meta: string[] = [];
     if (p.userEmail) meta.push(`From: ${String(p.userEmail)}`);
     const page = p.page ?? p.pageUrl;

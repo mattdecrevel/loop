@@ -32,9 +32,9 @@ Two orthogonal concepts: **`type`** = how it renders, **`category`** = where it 
 |---|---|---|
 | `error` | `errors` | → Create Issue / + Auto-Fix buttons (when the project has a repo) |
 | `seo_report` | `seo` | search/metrics digest |
-| `signup` | `users` | |
-| `subscription` | `revenue` | `kind`: new / upgrade / downgrade / cancel / expired / payment_failed / refund / addon; `endsAt`, `source`, `variant`, `subscriptionId` |
-| `feedback` | `feedback` | bug/question/feature/general; breadcrumb, steps, browser/viewport meta |
+| `signup` | `users` | `kind`: signup / waitlist (waitlist renders with a 📝 + "Waitlist signup" title) |
+| `subscription` | `revenue` | `kind`: new / upgrade / downgrade / cancel / expired / payment_failed / refund / addon / addon_cancel; `endsAt`, `source`, `variant`, `subscriptionId` |
+| `feedback` | `feedback` | bug/question/feature/general; breadcrumb, steps, browser/viewport meta, `consoleErrors[]` (rendered as a Console errors sub-section + included in filed issues) |
 | `cron` | `ops` | run summaries; supports a monospace `table` |
 | `infra` | `ops` | homelab/infra alerts |
 | `booking` | `bookings` | action card with Email / Add-to-Calendar / Reschedule URL buttons |

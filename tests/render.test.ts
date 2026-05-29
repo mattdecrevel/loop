@@ -312,3 +312,43 @@ describe('richMessage actions', () => {
     expect(dividerIdx).toBe(actionsIdx - 1);
   });
 });
+
+describe('waitlist signups', () => {
+  it('renders a waitlist signup with the 📝 emoji and a Waitlist title', () => {
+    const { blocks } = renderEvent({ type: 'signup', payload: { email: 'a@b.com', name: 'Ada', kind: 'waitlist' } } as any, { siteLabel: 'decrevel.dev' });
+    const json = JSON.stringify(blocks);
+    expect(json).toContain('📝');
+    expect(json).toContain('Waitlist signup');
+    expect(json).not.toContain('New signup');
+  });
+  it('keeps the 👤 emoji and "New signup" title for a normal signup', () => {
+    const { blocks } = renderEvent({ type: 'signup', payload: { email: 'a@b.com', kind: 'signup' } } as any);
+    const json = JSON.stringify(blocks);
+    expect(json).toContain('👤');
+    expect(json).toContain('New signup');
+  });
+});
+
+describe('addon_cancel subscription kind', () => {
+  it('renders addon_cancel with the ➖ emoji', () => {
+    const { blocks } = renderEvent({ type: 'subscription', payload: { email: 'a@b.com', kind: 'addon_cancel' } } as any);
+    expect(JSON.stringify(blocks)).toContain('➖');
+  });
+});
+
+describe('feedback console errors', () => {
+  it('renders captured console errors in a Console errors sub-section', () => {
+    const { blocks } = renderEvent({
+      type: 'feedback',
+      payload: { category: 'bug', message: 'broke', consoleErrors: ['TypeError: cannot read x', 'Warning: deprecated'] },
+    } as any);
+    const json = JSON.stringify(blocks);
+    expect(json).toContain('Console errors');
+    expect(json).toContain('TypeError: cannot read x');
+    expect(json).toContain('Warning: deprecated');
+  });
+  it('omits the Console errors sub-section when none are provided', () => {
+    const { blocks } = renderEvent({ type: 'feedback', payload: { category: 'bug', message: 'broke' } } as any);
+    expect(JSON.stringify(blocks)).not.toContain('Console errors');
+  });
+});

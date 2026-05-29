@@ -4,17 +4,16 @@ import * as React from 'react';
 import { Send } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import type { EventType } from '@/lib/events/schemas';
 import { sendPreview } from './actions';
 
-export function SendLiveButton({ type, projectSlug }: { type: EventType; projectSlug: string }) {
+export function SendLiveButton({ sampleId, projectSlug }: { sampleId: string; projectSlug: string }) {
   const [pending, setPending] = React.useState(false);
   const [status, setStatus] = React.useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
 
   async function onClick() {
     setPending(true);
     setStatus(null);
-    const result = await sendPreview(type, projectSlug);
+    const result = await sendPreview(sampleId, projectSlug);
     setPending(false);
     if ('error' in result) {
       setStatus({ kind: 'error', text: result.error });

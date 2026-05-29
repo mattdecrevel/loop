@@ -23,8 +23,8 @@ const linkSchema = z.object({ label: z.string(), url: z.string() });
 const payloads = {
   error: z.object({ message: z.string(), route: z.string().optional(), stack: z.string().optional(), source: z.string().optional() }),
   seo_report: z.object({ siteLabel: z.string(), clicks: z.number(), impressions: z.number(), topQueries: z.array(z.string()).optional(), subSections: z.array(subSectionSchema).optional() }),
-  signup: z.object({ email: z.string(), name: z.string().optional() }),
-  subscription: z.object({ email: z.string(), kind: z.enum(['new', 'upgrade', 'downgrade', 'cancel', 'expired', 'payment_failed', 'refund', 'addon']), plan: z.string().optional(), amount: z.number().optional(), interval: z.string().optional(), endsAt: z.string().optional(), source: z.string().optional(), variant: z.string().optional(), subscriptionId: z.string().optional() }),
+  signup: z.object({ email: z.string(), name: z.string().optional(), kind: z.enum(['signup', 'waitlist']).optional() }),
+  subscription: z.object({ email: z.string(), kind: z.enum(['new', 'upgrade', 'downgrade', 'cancel', 'expired', 'payment_failed', 'refund', 'addon', 'addon_cancel']), plan: z.string().optional(), amount: z.number().optional(), interval: z.string().optional(), endsAt: z.string().optional(), source: z.string().optional(), variant: z.string().optional(), subscriptionId: z.string().optional() }),
   feedback: z.object({
     category: z.enum(['bug', 'question', 'feature', 'general']),
     message: z.string(),
@@ -41,6 +41,7 @@ const payloads = {
     locale: z.string().optional(),
     timezone: z.string().optional(),
     pageUrl: z.string().optional(),
+    consoleErrors: z.array(z.string()).optional(),
   }),
   cron: z.object({ name: z.string(), ok: z.boolean(), summary: z.string().optional(), table: tableSchema.optional(), bullets: z.array(z.string()).optional() }),
   infra: z.object({ host: z.string(), message: z.string(), metric: z.string().optional() }),

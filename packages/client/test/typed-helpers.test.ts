@@ -50,8 +50,15 @@ describe('Loop typed helpers', () => {
     });
   });
 
+  describe('signup', () => {
+    it('threads a waitlist kind through into the payload', async () => {
+      await loop.signup({ email: 'a@b.com', kind: 'waitlist' });
+      expect(bodyOf(fetchSpy)).toEqual({ type: 'signup', payload: { email: 'a@b.com', kind: 'waitlist' } });
+    });
+  });
+
   describe('subscription', () => {
-    for (const kind of ['new', 'cancel', 'payment_failed', 'addon'] as const) {
+    for (const kind of ['new', 'cancel', 'payment_failed', 'addon', 'addon_cancel'] as const) {
       it(`sends type:"subscription" for kind="${kind}"`, async () => {
         await loop.subscription({ email: 'a@b.com', kind, plan: 'pro' });
         expect(bodyOf(fetchSpy)).toEqual({
@@ -72,6 +79,13 @@ describe('Loop typed helpers', () => {
         });
       });
     }
+    it('threads captured consoleErrors through into the payload', async () => {
+      await loop.feedback({ category: 'bug', message: 'broke', consoleErrors: ['TypeError: x'] });
+      expect(bodyOf(fetchSpy)).toEqual({
+        type: 'feedback',
+        payload: { category: 'bug', message: 'broke', consoleErrors: ['TypeError: x'] },
+      });
+    });
   });
 
   describe('cron', () => {
