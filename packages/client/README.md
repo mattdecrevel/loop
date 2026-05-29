@@ -21,12 +21,29 @@ npm install @mattdecrevel/loop
 > const nextConfig = { transpilePackages: ['@mattdecrevel/loop'] };
 > ```
 
+## Setup (bring your own endpoint)
+
+`baseUrl` is **required** — Loop is self-hosted, so you point the client at your
+own deployment. The recommended pattern is a single shared `loopClient` module
+you import everywhere:
+
+```ts
+// lib/loop.ts
+import { Loop } from '@mattdecrevel/loop';
+
+export const loopClient = new Loop({
+  apiKey: process.env.LOOP_API_KEY ?? '',
+  baseUrl: 'https://loop.decrevel.dev', // your Loop deployment — required
+});
+```
+
+`apiKey` is fail-open: if it's empty the client silently no-ops, so a not-yet-
+configured environment never throws. `baseUrl` has no default — you must supply it.
+
 ## Usage
 
 ```ts
-import { Loop } from '@mattdecrevel/loop';
-
-const loop = new Loop({ apiKey: process.env.LOOP_API_KEY! });
+import { loopClient as loop } from '@/lib/loop';
 
 // Fire-and-forget — never throws.
 await loop.notify({
@@ -73,7 +90,7 @@ Use `notify(event)` directly when you want full control over the envelope.
 | Option      | Default                       | Description                          |
 | ----------- | ----------------------------- | ------------------------------------ |
 | `apiKey`    | (required)                    | Loop project API key (`loop_pk_…`).  |
-| `baseUrl`   | `https://loop.decrevel.dev`   | Override the Loop service base URL.  |
+| `baseUrl`   | (required)                    | Your Loop deployment's base URL.     |
 | `timeoutMs` | `3000`                        | Abort the request after this many ms.|
 
 ## Fail-open guarantee
@@ -112,3 +129,9 @@ import {
 
 <Select>{LOOP_CATEGORIES.map(c => <Option key={c}>{c}</Option>)}</Select>
 ```
+
+## Changelog
+
+- **0.7.0** — **Breaking:** `baseUrl` is now required (bring-your-own-endpoint).
+  The previous `https://loop.decrevel.dev` default was removed. Pass your Loop
+  deployment URL explicitly, e.g. `new Loop({ apiKey, baseUrl: 'https://…' })`.

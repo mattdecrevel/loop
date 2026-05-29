@@ -31,14 +31,8 @@ describe('Loop typed helpers', () => {
     expect(urlOf(fetchSpy)).toBe('https://loop.example.com/api/events');
   });
 
-  it('defaults baseUrl to loop.decrevel.dev', async () => {
-    const l = new Loop({ apiKey: API_KEY });
-    await l.signup({ email: 'a@b.com' });
-    expect(urlOf(fetchSpy)).toBe('https://loop.decrevel.dev/api/events');
-  });
-
   it('no-ops when apiKey is empty (does not call fetch)', async () => {
-    const l = new Loop({ apiKey: '' });
+    const l = new Loop({ apiKey: '', baseUrl: 'https://loop.example.com' });
     await l.signup({ email: 'a@b.com' });
     expect(fetchSpy).not.toHaveBeenCalled();
   });

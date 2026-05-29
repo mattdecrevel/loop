@@ -4,7 +4,7 @@ import type {
   BookingPayload, ContactPayload, SeoReportPayload, GenericPayload, RawPayload,
 } from './types';
 
-export interface LoopOptions { apiKey: string; baseUrl?: string; timeoutMs?: number }
+export interface LoopOptions { apiKey: string; baseUrl: string; timeoutMs?: number }
 
 /**
  * Optional extras every typed helper accepts — the `LoopEventBase` fields like
@@ -21,7 +21,7 @@ export class Loop {
 
   constructor(opts: LoopOptions) {
     this.apiKey = opts.apiKey;
-    this.baseUrl = (opts.baseUrl ?? 'https://loop.decrevel.dev').replace(/\/$/, '');
+    this.baseUrl = opts.baseUrl.replace(/\/$/, '');
     this.timeoutMs = opts.timeoutMs ?? 3000;
   }
 

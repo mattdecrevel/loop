@@ -60,8 +60,12 @@ Sites install the published client from public npm — no auth, no `.npmrc`:
 import { Loop } from '@mattdecrevel/loop';
 import type { LoopEvent } from '@mattdecrevel/loop/types';
 
-const loop = new Loop({ apiKey: process.env.LOOP_API_KEY!, baseUrl: process.env.LOOP_BASE_URL });
-await loop.notify({ type: 'signup', payload: { email, name } });
+// Recommended: one shared client module (baseUrl is required — bring your own endpoint).
+export const loopClient = new Loop({
+  apiKey: process.env.LOOP_API_KEY ?? '',
+  baseUrl: 'https://loop.decrevel.dev',
+});
+await loopClient.notify({ type: 'signup', payload: { email, name } });
 ```
 
 Mint a project + API key with the operator console (`/projects`) or `pnpm seed:project <slug> "<Site Name>" [owner/repo]`.
