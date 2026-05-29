@@ -87,6 +87,8 @@ export interface ErrorPayload {
 export interface SignupPayload {
   email: string;
   name?: string;
+  /** Distinguishes a real account creation from a waitlist join. Defaults to 'signup'. */
+  kind?: 'signup' | 'waitlist';
 }
 // Common billing sources; the `(string & {})` keeps autocomplete for these
 // while still accepting any other provider without a package bump.
@@ -94,7 +96,16 @@ export type LoopSubscriptionSource = 'lemon' | 'apple_iap' | 'stripe' | (string 
 
 export interface SubscriptionPayload {
   email: string;
-  kind: 'new' | 'upgrade' | 'downgrade' | 'cancel' | 'expired' | 'payment_failed' | 'refund' | 'addon';
+  kind:
+    | 'new'
+    | 'upgrade'
+    | 'downgrade'
+    | 'cancel'
+    | 'expired'
+    | 'payment_failed'
+    | 'refund'
+    | 'addon'
+    | 'addon_cancel';
   plan?: string;
   amount?: number;
   interval?: string;
@@ -119,6 +130,8 @@ export interface FeedbackPayload {
   locale?: string;
   timezone?: string;
   pageUrl?: string;
+  /** Recent client-side console errors captured at report time (newest last). */
+  consoleErrors?: string[];
 }
 export interface CronPayload {
   name: string;

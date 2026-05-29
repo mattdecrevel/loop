@@ -20,6 +20,17 @@ describe('buildIssue', () => {
     expect(issue.body).toContain('click');
   });
 
+  it('includes captured console errors in a feedback issue body', () => {
+    const issue = buildIssue('feedback', {
+      category: 'bug',
+      message: 'toggle resets',
+      consoleErrors: ['TypeError: cannot read x', 'Warning: deprecated API'],
+    });
+    expect(issue.body).toContain('Console errors');
+    expect(issue.body).toContain('TypeError: cannot read x');
+    expect(issue.body).toContain('Warning: deprecated API');
+  });
+
   it('falls back to a generic issue for unknown types', () => {
     const issue = buildIssue('mystery', { title: 'Something', body: 'happened' });
     expect(typeof issue.title).toBe('string');

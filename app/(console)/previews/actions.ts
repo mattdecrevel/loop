@@ -4,10 +4,10 @@ import { asc, eq } from 'drizzle-orm';
 
 import { db } from '@/lib/db';
 import { projects } from '@/lib/db/schema';
-import { parseEvent, type EventType } from '@/lib/events/schemas';
+import { parseEvent } from '@/lib/events/schemas';
 import { ingestEvent } from '@/lib/ingest';
 import type { AuthedProject } from '@/lib/auth';
-import { SAMPLE_TYPES, SAMPLES } from '@/lib/render/samples';
+import { SAMPLE_ENTRIES, sampleById, type SampleId } from '@/lib/render/samples';
 
 export type SendPreviewResult = { ok: true; status: string } | { error: string };
 
@@ -35,12 +35,12 @@ async function resolveProject(slug?: string): Promise<AuthedProject | { error: s
 	return row as AuthedProject;
 }
 
-/** Post a single sample event through the real ingest pipeline. */
-export async function sendPreview(type: EventType, projectSlug?: string): Promise<SendPreviewResult> {
-	const sample = SAMPLES[type];
-	if (sample === undefined) return { error: `No sample for type "${type}".` };
+/** Post a single sample event (addressed by its stable id) through the real ingest pipeline. */
+export async function sendPreview(sampleId: SampleId, projectSlug?: string): Promise<SendPreviewResult> {
+	const sample = sampleById(sampleId);
+	if (!sample) return { error: `No sample with id "${sampleId}".` };
 
-	const parsed = parseEvent(sample);
+	const parsed = parseEvent(sample.envelope);
 	if (!parsed.success) return { error: `Invalid sample: ${parsed.error}` };
 
 	const project = await resolveProject(projectSlug);
@@ -56,35 +56,31 @@ export async function sendPreview(type: EventType, projectSlug?: string): Promis
 
 export type FireAllResult = {
 	project: string;
-	results: { type: EventType; status: string; error?: string }[];
+	results: { id: SampleId; label: string; status: string; error?: string }[];
 };
 
 /**
- * Fire one of every event type sequentially. Sequential (not parallel) so the
- * order in Slack is deterministic and we stay well under any rate limits.
- * Returns a per-type result list for the UI to display.
+ * Fire every sample (one per type, plus variant kinds) sequentially through the
+ * real ingest pipeline. Sequential (not parallel) so the order in Slack is
+ * deterministic and we stay well under any rate limit. Returns a per-sample
+ * result list for the UI to display.
  */
 export async function fireAllPreviews(projectSlug?: string): Promise<FireAllResult | { error: string }> {
 	const project = await resolveProject(projectSlug);
 	if ('error' in project) return project;
 
 	const results: FireAllResult['results'] = [];
-	for (const type of SAMPLE_TYPES) {
-		const sample = SAMPLES[type];
-		if (sample === undefined) {
-			results.push({ type, status: 'skipped', error: 'no sample defined' });
-			continue;
-		}
-		const parsed = parseEvent(sample);
+	for (const sample of SAMPLE_ENTRIES) {
+		const parsed = parseEvent(sample.envelope);
 		if (!parsed.success) {
-			results.push({ type, status: 'failed', error: parsed.error });
+			results.push({ id: sample.id, label: sample.label, status: 'failed', error: parsed.error });
 			continue;
 		}
 		try {
 			const r = await ingestEvent(project, parsed.data);
-			results.push({ type, status: r.status });
+			results.push({ id: sample.id, label: sample.label, status: r.status });
 		} catch (err) {
-			results.push({ type, status: 'failed', error: err instanceof Error ? err.message : String(err) });
+			results.push({ id: sample.id, label: sample.label, status: 'failed', error: err instanceof Error ? err.message : String(err) });
 		}
 	}
 	return { project: project.slug, results };

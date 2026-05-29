@@ -50,12 +50,17 @@ takes the typed payload + optional `LoopExtras` (`severity`, `links`, `footerNot
 
 ```ts
 await loop.signup({ email: 'ada@example.com', name: 'Ada' });
+await loop.signup({ email, name, kind: 'waitlist' });               // waitlist join (renders distinctly)
 await loop.subscription({ email, kind: 'new', plan: 'Pro', amount: 29, interval: 'mo', source: 'lemon' });
-await loop.feedback({ category: 'bug', message: 'Toggle broken', userEmail, page });
+await loop.subscription({ email, kind: 'addon_cancel', plan: 'Extra seats' });
+await loop.feedback({ category: 'bug', message: 'Toggle broken', userEmail, page, consoleErrors });
 await loop.cron({ name: 'nightly-sync', ok: true, summary: '42 records' });
 await loop.booking({ name, email, start, startIso, location });
 await loop.contact({ name, email, message, source: 'form' });
 await loop.error(err, { route: '/api/checkout', links: [{ label: 'View in Sentry', url: sentryUrl }] });
+
+// A "free signup" is just a signup routed to the revenue channel — no special kind:
+await loop.signup({ email, name }, { category: 'revenue' });
 
 // `generic` and `raw` require an explicit routing category:
 await loop.generic({ title: 'Deploy', body: 'shipped' }, 'ops');
@@ -88,8 +93,8 @@ Every event also accepts these optional base fields:
 - `category` — override the default routing category
 - `links` — `{ label, url }[]`, rendered as URL buttons on the message (e.g. "View in Sentry")
 - `footerNote` — a short context line in the footer (e.g. a budget/spend figure)
-- `digest` — fold routine `info` events into a rolling summary *(handler not yet active — see the service README roadmap)*
-- `idempotencyKey` — recorded for dedup *(enforcement pending)*
+- `digest` — fold routine `info` events into a rolling summary (the service batches them and posts a per-category digest on a schedule)
+- `idempotencyKey` — server drops a repeat event with the same key for the project (deduped at ingest)
 
 ### Runtime tuples (for dashboards, dropdowns, filters)
 

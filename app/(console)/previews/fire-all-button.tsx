@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Flame } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { SAMPLE_ENTRIES } from '@/lib/render/samples';
 import { fireAllPreviews, type FireAllResult } from './actions';
 
 /**
@@ -28,7 +29,7 @@ export function FireAllButton({ projectSlug }: { projectSlug: string }) {
 		<div className="space-y-2">
 			<Button onClick={onClick} disabled={pending} variant="default" size="sm">
 				<Flame className="size-3.5" />
-				{pending ? `Firing all 11 types…` : `Fire all 11 types at ${projectSlug}`}
+				{pending ? `Firing all ${SAMPLE_ENTRIES.length} samples…` : `Fire all ${SAMPLE_ENTRIES.length} samples at ${projectSlug}`}
 			</Button>
 
 			{result && 'error' in result ? (
@@ -46,11 +47,11 @@ export function FireAllButton({ projectSlug }: { projectSlug: string }) {
 								: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400';
 						return (
 							<span
-								key={r.type}
+								key={r.id}
 								title={r.error ?? r.status}
 								className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-mono ${cls}`}
 							>
-								<span className="font-medium">{r.type}</span>
+								<span className="font-medium">{r.label}</span>
 								<span className="opacity-70">{failed ? 'fail' : r.status}</span>
 							</span>
 						);

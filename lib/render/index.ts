@@ -10,8 +10,8 @@ function pickEmoji(ev: ParsedEvent): string {
   switch (ev.type) {
     case 'error': return '🚨';
     case 'feedback': return ({ bug: '🐛', question: '❓', feature: '💡', general: '💬' } as Record<string, string>)[p.category] ?? '💬';
-    case 'subscription': return ({ new: '🎉', upgrade: '⬆️', downgrade: '⬇️', cancel: '👋', expired: '⌛', payment_failed: '⚠️', refund: '💸', addon: '➕' } as Record<string, string>)[p.kind] ?? '💳';
-    case 'signup': return '👤';
+    case 'subscription': return ({ new: '🎉', upgrade: '⬆️', downgrade: '⬇️', cancel: '👋', expired: '⌛', payment_failed: '⚠️', refund: '💸', addon: '➕', addon_cancel: '➖' } as Record<string, string>)[p.kind] ?? '💳';
+    case 'signup': return p.kind === 'waitlist' ? '📝' : '👤';
     case 'cron': return p.ok ? '✅' : '⚠️';
     case 'infra': return ev.severity === 'error' ? '🔴' : '📡';
     case 'booking': return '📅';
@@ -108,11 +108,17 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
         ...linkActions,
       ];
       const hasActions = feedbackIssueActions.length || feedbackUrlActions.length;
+      // Captured console errors render as a dedicated sub-section (newest last,
+      // capped) so the report carries the failing client context with it.
+      const consoleErrs = Array.isArray(p.consoleErrors) ? p.consoleErrors.filter(Boolean) : [];
+      const feedbackSubSections = consoleErrs.length
+        ? [{ header: 'Console errors', lines: consoleErrs.slice(-10).map((e: string) => `\`${String(e)}\``) }]
+        : undefined;
       return {
         text: `Feedback — ${p.category}`,
         blocks: richMessage({
           ...base, emoji, title, subject, breadcrumb: p.breadcrumb,
-          body: p.message, steps: p.steps, meta,
+          body: p.message, steps: p.steps, subSections: feedbackSubSections, meta,
           ...(hasActions ? { interactiveActions: feedbackIssueActions, actions: feedbackUrlActions, divider: true } : {}),
         }),
       };
@@ -120,10 +126,12 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
 
     case 'signup': {
       const identity = p.name ? `${p.name} (${p.email})` : p.email;
+      const isWaitlist = p.kind === 'waitlist';
+      const title = isWaitlist ? 'Waitlist signup' : 'New signup';
       return {
-        text: `New signup — ${identity}`,
+        text: `${isWaitlist ? 'New waitlist signup' : 'New signup'} — ${identity}`,
         blocks: richMessage({
-          ...base, emoji, title: 'New signup', subject: identity,
+          ...base, emoji, title, subject: identity,
         }),
       };
     }

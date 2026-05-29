@@ -50,4 +50,33 @@ describe('event envelope', () => {
     const r = parseEvent({ type: 'subscription', payload: { email: 'a@b.com', kind: 'expired' } });
     expect(r.success).toBe(true);
   });
+  it('parses a waitlist signup and still routes to users', () => {
+    const r = parseEvent({ type: 'signup', payload: { email: 'a@b.com', kind: 'waitlist' } });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.category).toBe('users');
+  });
+  it('rejects an unknown signup kind', () => {
+    const r = parseEvent({ type: 'signup', payload: { email: 'a@b.com', kind: 'bogus' } });
+    expect(r.success).toBe(false);
+  });
+  it('parses the addon_cancel subscription kind (routes to revenue)', () => {
+    const r = parseEvent({ type: 'subscription', payload: { email: 'a@b.com', kind: 'addon_cancel' } });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.category).toBe('revenue');
+  });
+  it('routes a signup to revenue when the caller overrides the category', () => {
+    // A "free signup" is just a signup posted to the revenue channel — a routing
+    // override, not a dedicated type/kind.
+    const r = parseEvent({ type: 'signup', category: 'revenue', payload: { email: 'a@b.com' } });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.category).toBe('revenue');
+  });
+  it('parses feedback with captured consoleErrors', () => {
+    const r = parseEvent({
+      type: 'feedback',
+      payload: { category: 'bug', message: 'broke', consoleErrors: ['TypeError: x', 'Warning: y'] },
+    });
+    expect(r.success).toBe(true);
+    if (r.success) expect((r.data.payload as { consoleErrors: string[] }).consoleErrors).toHaveLength(2);
+  });
 });
