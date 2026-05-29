@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SAMPLE_ENTRIES, sampleById } from '@/lib/render/samples';
+import { SAMPLE_ENTRIES, sampleById, type SampleId } from '@/lib/render/samples';
 import { parseEvent } from '@/lib/events/schemas';
 import { renderEvent } from '@/lib/render';
 
@@ -33,7 +33,8 @@ describe('preview samples', () => {
   it('sampleById resolves known ids and returns undefined otherwise', () => {
     expect(sampleById('signup')?.type).toBe('signup');
     expect(sampleById('signup-waitlist')?.type).toBe('signup');
-    expect(sampleById('nope')).toBeUndefined();
+    // Cast: exercising the runtime guard for an id outside the typed union.
+    expect(sampleById('nope' as SampleId)).toBeUndefined();
   });
 
   it('includes the new variant + field samples', () => {

@@ -8,7 +8,7 @@ import { parseEvent } from '@/lib/events/schemas';
 import { renderEvent } from '@/lib/render';
 import type { SlackBlock } from '@/lib/render/blocks';
 import { mrkdwnToHtml } from '@/lib/render/mrkdwn-to-html';
-import { SAMPLE_ENTRIES, type SampleEntry } from '@/lib/render/samples';
+import { SAMPLE_ENTRIES, type Sample } from '@/lib/render/samples';
 import { FireAllButton } from './fire-all-button';
 import { ProjectPicker } from './project-picker';
 import { SendLiveButton } from './send-button';
@@ -80,7 +80,7 @@ function ActionsBlock({ block }: { block: SlackBlock }) {
   );
 }
 
-function PreviewCard({ entry, previewSlug }: { entry: SampleEntry; previewSlug: string }) {
+function PreviewCard({ entry, previewSlug }: { entry: Sample; previewSlug: string }) {
   const parsed = parseEvent(entry.envelope);
 
   if (!parsed.success) {

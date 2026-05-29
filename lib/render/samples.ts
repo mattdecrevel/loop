@@ -18,7 +18,7 @@ export interface SampleEntry {
  * `id === type`; variants get a `<type>-<kind>` id so the send actions can address
  * them individually.
  */
-export const SAMPLE_ENTRIES: SampleEntry[] = [
+export const SAMPLE_ENTRIES = [
   {
     id: 'signup',
     label: 'signup',
@@ -225,9 +225,19 @@ export const SAMPLE_ENTRIES: SampleEntry[] = [
       },
     },
   },
-];
+] as const satisfies readonly SampleEntry[];
+
+/** A single sample entry (the precise element type, with literal `id`/`type`). */
+export type Sample = (typeof SAMPLE_ENTRIES)[number];
+
+/**
+ * Union of every sample's `id` — derived from SAMPLE_ENTRIES so the list stays
+ * the single source of truth (same `as const` → derived-union pattern as the
+ * LOOP_* tuples). Keeps the preview send actions typed rather than stringly-typed.
+ */
+export type SampleId = Sample['id'];
 
 /** Look up a sample entry by its stable id. */
-export function sampleById(id: string): SampleEntry | undefined {
+export function sampleById(id: SampleId): Sample | undefined {
   return SAMPLE_ENTRIES.find((s) => s.id === id);
 }

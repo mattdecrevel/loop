@@ -7,7 +7,7 @@ import { projects } from '@/lib/db/schema';
 import { parseEvent } from '@/lib/events/schemas';
 import { ingestEvent } from '@/lib/ingest';
 import type { AuthedProject } from '@/lib/auth';
-import { SAMPLE_ENTRIES, sampleById } from '@/lib/render/samples';
+import { SAMPLE_ENTRIES, sampleById, type SampleId } from '@/lib/render/samples';
 
 export type SendPreviewResult = { ok: true; status: string } | { error: string };
 
@@ -36,7 +36,7 @@ async function resolveProject(slug?: string): Promise<AuthedProject | { error: s
 }
 
 /** Post a single sample event (addressed by its stable id) through the real ingest pipeline. */
-export async function sendPreview(sampleId: string, projectSlug?: string): Promise<SendPreviewResult> {
+export async function sendPreview(sampleId: SampleId, projectSlug?: string): Promise<SendPreviewResult> {
 	const sample = sampleById(sampleId);
 	if (!sample) return { error: `No sample with id "${sampleId}".` };
 
@@ -56,7 +56,7 @@ export async function sendPreview(sampleId: string, projectSlug?: string): Promi
 
 export type FireAllResult = {
 	project: string;
-	results: { id: string; label: string; status: string; error?: string }[];
+	results: { id: SampleId; label: string; status: string; error?: string }[];
 };
 
 /**

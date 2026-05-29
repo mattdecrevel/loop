@@ -4,9 +4,10 @@ import * as React from 'react';
 import { Send } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import type { SampleId } from '@/lib/render/samples';
 import { sendPreview } from './actions';
 
-export function SendLiveButton({ sampleId, projectSlug }: { sampleId: string; projectSlug: string }) {
+export function SendLiveButton({ sampleId, projectSlug }: { sampleId: SampleId; projectSlug: string }) {
   const [pending, setPending] = React.useState(false);
   const [status, setStatus] = React.useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
 
