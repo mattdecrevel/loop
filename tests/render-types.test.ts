@@ -79,10 +79,18 @@ describe('renderEvent — per-type baseline snapshots', () => {
   });
 
   it('seo_report', () => {
-    const { text, blocks } = renderEvent(ev({ type: 'seo_report', category: 'seo', payload: { siteLabel: 'demo.dev', clicks: 10, impressions: 100 } }), { siteLabel: 'demo.dev' });
-    expect(text).toBe('demo.dev — 10c/100i');
-    expect(JSON.stringify(blocks)).toContain('🔎');
-    expect(JSON.stringify(blocks)).toContain('10.00% CTR');
+    const { text, blocks } = renderEvent(ev({ type: 'seo_report', category: 'seo', payload: { siteLabel: 'demo.dev', clicks: 10, impressions: 100, product: { signups24h: 3, mrrUsd: 50 }, budget: { spentUsd: 2, capUsd: 25 } } }), { siteLabel: 'demo.dev' });
+    expect(text).toBe('SEO digest · demo.dev — 10c/100i');
+    const json = JSON.stringify(blocks);
+    expect(json).toContain('📈');
+    expect(json).toContain('*SEO digest*');
+    expect(json).toContain('CTR: *10.0%*');
+    expect(json).toContain('Search · last 7 days');
+    // structured product → standard Product section + budget footer
+    expect(json).toContain('Product · last 24h / 7d');
+    expect(json).toContain('signups (24h): *3*');
+    expect(json).toContain('MRR: *$50.00*');
+    expect(json).toContain('Anthropic budget: $2.00 of $25.00 this month');
   });
 
   it('generic', () => {
