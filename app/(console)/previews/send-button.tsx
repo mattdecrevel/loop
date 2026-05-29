@@ -7,14 +7,14 @@ import { Button } from '@/components/ui/button';
 import type { EventType } from '@/lib/events/schemas';
 import { sendPreview } from './actions';
 
-export function SendLiveButton({ type }: { type: EventType }) {
+export function SendLiveButton({ type, projectSlug }: { type: EventType; projectSlug: string }) {
   const [pending, setPending] = React.useState(false);
   const [status, setStatus] = React.useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
 
   async function onClick() {
     setPending(true);
     setStatus(null);
-    const result = await sendPreview(type);
+    const result = await sendPreview(type, projectSlug);
     setPending(false);
     if ('error' in result) {
       setStatus({ kind: 'error', text: result.error });
