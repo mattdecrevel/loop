@@ -131,6 +131,30 @@ describe('renderEvent', () => {
     const { blocks } = renderEvent({ type: 'error', payload: { message: 'boom' } } as any, { siteLabel: 'decrevel.dev', projectSlug: 'decrevel-dev' });
     expect(JSON.stringify(blocks)).toContain('decrevel.dev');
   });
+
+  it('error: code block carries only the stack frames, not the message header', () => {
+    const stack = 'Error: boom happened\n    at queryWithCache (/var/task/db.js:25:38430)\n    at process (node:internal:104:5)';
+    const { blocks } = renderEvent({ type: 'error', payload: { message: 'boom happened', stack } } as any, { siteLabel: 'decrevel.dev' });
+    const sectionText = (blocks.find((b) => b.type === 'section') as any).text.text as string;
+    // message appears once (as the section lead-in), not duplicated by the stack header.
+    expect(sectionText.match(/boom happened/g)?.length).toBe(1);
+    // the code block keeps the frames…
+    expect(sectionText).toContain('at queryWithCache');
+    // …but drops the redundant "Error: <message>" header line.
+    expect(sectionText).not.toContain('Error: boom happened');
+  });
+
+  it('error: route + source land in the footer beside the site, not a separate line', () => {
+    const { blocks } = renderEvent(
+      { type: 'error', payload: { message: 'boom', route: '/api/cron/job-search', source: 'server' } } as any,
+      { siteLabel: 'poyse.io' },
+    );
+    const footer = blocks.at(-1) as unknown as { type: string; elements: { text: string }[] };
+    expect(footer.type).toBe('context');
+    expect(footer.elements[0].text).toContain('poyse.io');
+    expect(footer.elements[0].text).toContain('/api/cron/job-search');
+    expect(footer.elements[0].text).toContain('server');
+  });
 });
 
 describe('base-level links + footerNote primitives', () => {

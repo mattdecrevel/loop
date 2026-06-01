@@ -36,6 +36,7 @@ export interface RichMessageInput {
   interactiveActions?: InteractiveButton[];  // server-handled (action_id) buttons — rendered before URL buttons
   divider?: boolean;               // divider before the actions block
   footerNote?: string;             // optional helpful note in the footer (e.g. "Anthropic budget: $2.43 of $25.00 this month")
+  footerExtra?: (string | null | undefined)[];  // extra footer segments after the site (e.g. route, source) — "where it came from"
   siteLabel?: string;              // source footer (preferred)
   projectSlug?: string;            // source footer fallback
 }
@@ -92,8 +93,11 @@ export function richMessage(input: RichMessageInput): SlackBlock[] {
   }
 
   const source = input.siteLabel ?? input.projectSlug;
-  // Site URL leads — it's the "where am I" anchor; footerNote (e.g. budget) trails.
-  const footer = [source, input.footerNote].filter((s): s is string => Boolean(s && s.trim())).join('  ·  ');
+  // Site URL leads — it's the "where am I" anchor; then any footerExtra (route,
+  // source server, …); footerNote (e.g. budget) trails.
+  const footer = [source, ...(input.footerExtra ?? []), input.footerNote]
+    .filter((s): s is string => Boolean(s && s.trim()))
+    .join('  ·  ');
   if (footer) blocks.push(context(footer));
   return blocks;
 }
