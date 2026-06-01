@@ -27,6 +27,22 @@ function cap(s: string): string {
 }
 
 /**
+ * Pull just the call frames out of a stack. A JS stack starts with
+ * `Error: <message>` (often multi-line) and then `    at …` frames — the
+ * header repeats the message we already show in the section, so we drop
+ * everything before the first frame and cap the depth. Falls back to the
+ * first few lines when no `at` frames are present.
+ */
+function stackFrames(stack: string, depth = 6): string {
+  const lines = stack.split('\n');
+  const first = lines.findIndex((l) => /^\s*at\s/.test(l));
+  return (first >= 0 ? lines.slice(first) : lines)
+    .slice(0, depth)
+    .map((l) => l.trim())
+    .join('\n');
+}
+
+/**
  * Opt-in To-Do / Remind buttons. Only rendered when the caller includes
  * `'todo'` / `'remind'` in the event's `actions`, so default messages stay clean.
  */
@@ -74,17 +90,21 @@ export function renderEvent(ev: ParsedEvent, ctx?: RenderContext): Rendered {
       return { text: p.text, blocks: (p.blocks as SlackBlock[]) ?? [section(p.text)] };
 
     case 'error': {
+      // Show the error once: message in the section, only the call frames in the
+      // code block (the stack's `Error: <message>` header just repeats the message).
       let body = String(p.message ?? '');
       if (p.stack) {
-        const trimmed = String(p.stack).split('\n').slice(0, 6).join('\n');
-        body += `\n\`\`\`${trimmed}\`\`\``;
+        const frames = stackFrames(String(p.stack));
+        if (frames) body += `\n\`\`\`${frames}\`\`\``;
       }
       const errorIssueActions = [...issueButtons(ev, ctx), ...actionButtonsFor(ev)];
       return {
         text: `Error — ${p.message}`,
         blocks: richMessage({
           ...base, emoji, title: 'Error', body,
-          meta: [p.route ? `\`${p.route}\`` : null, p.source ? `source: ${p.source}` : null],
+          // Where it came from lives in the footer next to the site, not a
+          // separate middle line: `site · route · source`.
+          footerExtra: [p.route ? `\`${p.route}\`` : null, p.source ? String(p.source) : null],
           ...(errorIssueActions.length ? { interactiveActions: errorIssueActions, divider: true } : {}),
         }),
       };

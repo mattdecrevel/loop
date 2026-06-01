@@ -146,6 +146,18 @@ describe('renderEvent — links + footerNote primitives across event types', () 
     expect(footer.type).toBe('context');
     expect(footer.elements[0].text).toContain('Anthropic budget');
   });
+
+  it('footer leads with siteLabel before footerNote', () => {
+    const { blocks } = renderEvent(ev({
+      type: 'cron',
+      category: 'ops',
+      footerNote: 'Anthropic budget: $2.43 of $25.00 this month',
+      payload: { name: 'nightly', ok: true },
+    }), { siteLabel: 'demo.dev' });
+    const footer = blocks.at(-1) as unknown as { type: string; elements: { text: string }[] };
+    const text = footer.elements[0].text;
+    expect(text.indexOf('demo.dev')).toBeLessThan(text.indexOf('Anthropic budget'));
+  });
 });
 
 describe('renderEvent — actions: todo / remind button identity', () => {
