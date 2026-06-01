@@ -92,7 +92,8 @@ export function richMessage(input: RichMessageInput): SlackBlock[] {
   }
 
   const source = input.siteLabel ?? input.projectSlug;
-  const footer = [input.footerNote, source].filter((s): s is string => Boolean(s && s.trim())).join('  ·  ');
+  // Site URL leads — it's the "where am I" anchor; footerNote (e.g. budget) trails.
+  const footer = [source, input.footerNote].filter((s): s is string => Boolean(s && s.trim())).join('  ·  ');
   if (footer) blocks.push(context(footer));
   return blocks;
 }
