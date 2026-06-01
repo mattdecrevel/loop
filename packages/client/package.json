@@ -1,6 +1,6 @@
 {
   "name": "@mattdecrevel/loop",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Thin fail-open client for the Loop notification service. Typed Slack-event SDK for routing notifications through one Slack bot, with rich Block Kit rendering server-side.",
   "license": "MIT",
   "author": "Matt Decrevel <matt@mattdecrevel.com>",
