@@ -2,7 +2,7 @@
 
 Centralized Slack notification & alerts service for all decrevel projects. Sites send **typed semantic events** to one HTTP endpoint; Loop owns routing, Block Kit rendering, the Slack bot, interactivity, and the database — so every project's alerts look identical and there's one place to iterate.
 
-- **Live:** https://loop.decrevel.dev (operator console + API), Vercel team `nineteen87`, own Neon Postgres DB
+- **Live:** https://loop.decrevel.dev (operator console + API), Vercel team `nineteen87`, own Supabase Postgres DB
 - **Client:** [`@mattdecrevel/loop`](https://www.npmjs.com/package/@mattdecrevel/loop) on public npm — the thin, fail-open SDK sites install
 
 ---
@@ -102,7 +102,7 @@ Pages: **Projects** (mint keys) · **Channels** (name → Slack channel ID) · *
 
 | Var | Purpose |
 |---|---|
-| `DATABASE_URL` / `DATABASE_URL_UNPOOLED` | Neon (runtime / migrations) |
+| `DATABASE_URL` / `DATABASE_URL_UNPOOLED` | Supabase — pooled transaction pooler `:6543` (runtime) / session pooler `:5432` (migrations) |
 | `SLACK_BOT_TOKEN` | `chat.postMessage` / `chat.update` |
 | `SLACK_SIGNING_SECRET` | verify interactivity requests (Phase 2) |
 | `LOOP_ADMIN_USER` / `LOOP_ADMIN_PASSWORD` | console login |
@@ -148,7 +148,7 @@ A `client-v*` tag push still works as a fallback (publishes + releases, skips th
 - **Read API** — Bearer-authed (`LOOP_READ_KEY`) endpoint at `/api/read` returning counts + recent events for the decrevel.dev dashboard.
 - **Published client** — `@mattdecrevel/loop@0.4.0` on public npm, including the new `LOOP_CATEGORIES` / `LOOP_SEVERITIES` / `LOOP_ACTIONS` / `LOOP_EVENT_TYPES` / `LOOP_EVENT_STATUSES` tuple exports.
 
-**Open:** Nothing on the active roadmap right now — see [docs/backup-restore.md](docs/backup-restore.md) "Gaps to address" for the deliberately-deferred off-Neon dump (Neon's 24h PITR is considered sufficient for the data Loop holds today).
+**Open:** Nothing on the active roadmap right now. **DB moved off Neon → Supabase (Free) on 2026-07-01** to end per-CPU-hour compute billing (a 5-min reminders cron was defeating Neon's scale-to-zero on a pinned 1-CU compute). Supabase Free has no PITR/automated backups, so the off-provider `pg_dump` — previously deferred — is now the primary safety net; the first was captured at cutover. See [docs/backup-restore.md](docs/backup-restore.md).
 
 **Just shipped (since the last roadmap revision):**
 - Service tests — vitest covers ingest validation + pipeline + idempotency, routing precedence, render snapshots per event type, digest grouping, and the digest + reminders crons (63 tests added, 127 total). New `test-service.yml` workflow runs on every relevant PR.
