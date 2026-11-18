@@ -1,5 +1,5 @@
 # Dependabot configuration
-# - Weekly version updates (Mon 6am CT), minor+patch grouped into one PR per directory
+# - Weekly version updates (Tue 6am CT), minor+patch grouped into one PR per directory
 # - Majors arrive as individual PRs so breaking changes are reviewed one at a time
 # - Security updates are grouped separately and are NOT delayed by cooldown
 # - cooldown: waits a few days after a release before proposing it (npm supply-chain protection)
@@ -12,7 +12,7 @@ updates:
       - "/"
     schedule:
       interval: weekly
-      day: monday
+      day: tuesday
       time: "06:00"
       timezone: America/Chicago
     open-pull-requests-limit: 5
