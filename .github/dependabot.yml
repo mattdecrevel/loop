@@ -1,0 +1,50 @@
+# Dependabot configuration
+# - Weekly version updates (Tue 6am CT), minor+patch grouped into one PR per directory
+# - Majors arrive as individual PRs so breaking changes are reviewed one at a time
+# - Security updates are grouped separately and are NOT delayed by cooldown
+# - cooldown: waits a few days after a release before proposing it (npm supply-chain protection)
+# Docs: https://docs.github.com/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+version: 2
+updates:
+  # pnpm workspace root covers packages/*
+  - package-ecosystem: npm
+    directories:
+      - "/"
+    schedule:
+      interval: weekly
+      day: tuesday
+      time: "06:00"
+      timezone: America/Chicago
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
+    commit-message:
+      prefix: chore
+      prefix-development: chore
+      include: scope
+    groups:
+      npm-minor-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+        patterns: ["*"]
+      npm-security:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directories:
+      - "/"
+    schedule:
+      interval: monthly
+      time: "06:00"
+      timezone: America/Chicago
+    open-pull-requests-limit: 2
+    cooldown:
+      default-days: 3
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      github-actions:
+        patterns: ["*"]
