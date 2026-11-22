@@ -51,5 +51,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # next build type-checks; without this a type error only shows up as a
+      # failed Vercel deploy, and Vercel skips Dependabot branches entirely.
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+
       - name: Run service tests
         run: pnpm test
