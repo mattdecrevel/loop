@@ -48,7 +48,7 @@ const payloads = {
   booking: z.object({ name: z.string(), email: z.string(), start: z.string(), notes: z.string().optional(), startIso: z.string().optional(), endIso: z.string().optional(), location: z.string().optional(), meetingUrl: z.string().url().optional(), durationMin: z.number().optional(), manageUrl: z.string().optional() }),
   contact: z.object({ name: z.string(), email: z.string(), message: z.string(), source: z.string().optional() }),
   generic: z.object({ title: z.string(), body: z.string(), fields: z.array(z.object({ label: z.string(), value: z.string() })).optional(), context: z.string().optional(), subSections: z.array(subSectionSchema).optional(), table: tableSchema.optional(), emoji: z.string().optional() }),
-  raw: z.object({ text: z.string(), blocks: z.array(z.record(z.unknown())).optional() }),
+  raw: z.object({ text: z.string(), blocks: z.array(z.record(z.string(), z.unknown())).optional() }),
 } as const;
 
 export type EventType = keyof typeof payloads;
